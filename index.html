@@ -138,6 +138,27 @@
 
   .empty{color:var(--muted); font-size:13px; padding:24px 0; text-align:center;}
 
+  /* Contas e Cartões */
+  .conta-row{display:flex; align-items:center; justify-content:space-between; padding:13px 0; border-bottom:1px solid var(--line);}
+  .conta-row:last-child{border-bottom:none;}
+  .conta-left{display:flex; flex-direction:column; gap:3px; min-width:0;}
+  .conta-banco{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em;}
+  .conta-nome{font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .conta-saldo{font-size:15px; font-family:'Spectral', serif; font-weight:500; white-space:nowrap; flex-shrink:0;}
+
+  .cartao-card{padding:15px 0; border-bottom:1px solid var(--line);}
+  .cartao-card:last-child{border-bottom:none;}
+  .cartao-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; gap:10px;}
+  .cartao-banco{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em;}
+  .cartao-nome{font-size:14px; margin-bottom:9px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .cartao-usado{font-size:15px; font-family:'Spectral', serif; font-weight:500;}
+  .cartao-limite{font-size:11px; color:var(--muted);}
+  .cartao-track{height:5px; background:var(--panel-2); border-radius:3px; overflow:hidden; margin-top:8px;}
+  .cartao-fill{height:100%; border-radius:3px;}
+  .cartao-fill.ok{background:var(--gold);}
+  .cartao-fill.alto{background:var(--red);}
+  .cartao-pct{font-size:11px; color:var(--muted); margin-top:6px;}
+
   .view{display:none;}
   .view.active{display:block; animation:fadein .22s ease;}
   @keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
@@ -166,6 +187,10 @@
     <button class="drawer-item active" data-view="resumo">
       <svg viewBox="0 0 24 24"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-7h6v7"/></svg>
       Resumo do mês
+    </button>
+    <button class="drawer-item" data-view="contas">
+      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/></svg>
+      Contas e cartões
     </button>
     <button class="drawer-item" data-view="categorias">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg>
@@ -222,6 +247,18 @@
     <section>
       <p class="sec-title">Parcelas em andamento</p>
       <div id="parc-list-preview"></div>
+    </section>
+  </div>
+
+  <!-- VIEW: CONTAS E CARTÕES -->
+  <div class="view" id="view-contas">
+    <section>
+      <p class="sec-title">Contas bancárias <span class="hint" id="contas-total-hint"></span></p>
+      <div id="contas-list"></div>
+    </section>
+    <section>
+      <p class="sec-title">Cartões de crédito</p>
+      <div id="cartoes-list"></div>
     </section>
   </div>
 
@@ -295,7 +332,14 @@ function getMockData(){
     {label:'ago', total:3255},
     {label:'set', total:3401.05, current:true},
   ];
-  return {categorias, parcelas, meses};
+  const contas = [
+    {banco:'Banco Exemplo', nome:'Conta corrente', saldo:2140.50},
+    {banco:'Banco Exemplo 2', nome:'Poupança', saldo:850.00},
+  ];
+  const cartoes = [
+    {banco:'Banco Exemplo', nome:'Cartão Gold', limiteUsado:2355.77, limiteTotal:6000},
+  ];
+  return {categorias, parcelas, meses, contas, cartoes};
 }
 
 async function fetchRealData(){
@@ -360,6 +404,51 @@ function renderParcelas(targetId, limit){
   }).join('');
 }
 
+function renderContas(){
+  const contas = data.contas || [];
+  const cartoes = data.cartoes || [];
+
+  const contasEl = document.getElementById('contas-list');
+  if(!contas.length){
+    contasEl.innerHTML = '<p class="empty">Nenhuma conta bancária encontrada.</p>';
+  } else {
+    contasEl.innerHTML = contas.map(c => `
+      <div class="conta-row">
+        <div class="conta-left">
+          <span class="conta-banco">${c.banco}</span>
+          <span class="conta-nome">${c.nome}</span>
+        </div>
+        <span class="conta-saldo num">${fmt(c.saldo)}</span>
+      </div>`).join('');
+  }
+  const totalSaldo = contas.reduce((s,c)=>s+c.saldo, 0);
+  document.getElementById('contas-total-hint').textContent = contas.length ? fmt(totalSaldo) : '';
+
+  const cartoesEl = document.getElementById('cartoes-list');
+  if(!cartoes.length){
+    cartoesEl.innerHTML = '<p class="empty">Nenhum cartão de crédito encontrado.</p>';
+  } else {
+    cartoesEl.innerHTML = cartoes.map(c => {
+      const pct = c.limiteTotal ? Math.min(100, (c.limiteUsado/c.limiteTotal*100)) : null;
+      return `
+      <div class="cartao-card">
+        <div class="cartao-top">
+          <div>
+            <div class="cartao-banco">${c.banco}</div>
+            <div class="cartao-nome">${c.nome}</div>
+          </div>
+        </div>
+        <div class="cartao-usado num">${fmt(c.limiteUsado)}</div>
+        ${c.limiteTotal ? `
+          <div class="cartao-limite">de ${fmt(c.limiteTotal)} de limite</div>
+          <div class="cartao-track"><div class="cartao-fill ${pct>70?'alto':'ok'}" style="width:${pct.toFixed(0)}%"></div></div>
+          <div class="cartao-pct">${pct.toFixed(0)}% utilizado</div>
+        ` : ''}
+      </div>`;
+    }).join('');
+  }
+}
+
 function renderAll(){
   const totalMes = data.categorias.reduce((s,c)=>s+c.valor,0);
   document.getElementById('hero-total').textContent = fmt(totalMes);
@@ -378,6 +467,8 @@ function renderAll(){
   }
   document.getElementById('cat-total-hint').textContent = fmt(totalMes);
   document.getElementById('drawer-cat-count').textContent = data.categorias.length;
+
+  renderContas();
 
   renderParcelas('parc-list-preview', 2);
   renderParcelas('parc-list-full');
@@ -426,7 +517,7 @@ function renderAll(){
 })();
 
 /* NAV via drawer */
-const viewNames = {resumo:'Resumo', categorias:'Categorias', parcelas:'Parcelas', comparativo:'Comparativo'};
+const viewNames = {resumo:'Resumo', contas:'Contas', categorias:'Categorias', parcelas:'Parcelas', comparativo:'Comparativo'};
 function goToView(name){
   document.querySelectorAll('.drawer-item').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
