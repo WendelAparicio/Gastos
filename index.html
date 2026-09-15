@@ -347,6 +347,11 @@ function getMockData(){
     {nome:'Celular', valor:180.00, atual:11, total:12, banco:'PicPay'},
     {nome:'Sofá', valor:265.00, atual:2, total:6, banco:'Bradesco'},
   ];
+  const transacoes = [
+    {descricao:'Supermercado Extra', valor:340.20, categoria:'Mercado', banco:'Bradesco', contaId:'demo-cartao-1'},
+    {descricao:'Uber', valor:70.10, categoria:'Transporte', banco:'Nubank', contaId:'demo-cartao-2'},
+    {descricao:'Netflix', valor:44.90, categoria:'Assinaturas', banco:'PicPay', contaId:'demo-cartao-2'},
+  ];
   const meses = [
     {label:'abr', total:3120, porBanco:{Bradesco:1800, Nubank:900, PicPay:420}},
     {label:'mai', total:3480, porBanco:{Bradesco:2000, Nubank:1000, PicPay:480}},
@@ -355,6 +360,11 @@ function getMockData(){
     {label:'ago', total:3255, porBanco:{Bradesco:1850, Nubank:950, PicPay:455}},
     {label:'set', total:3401.05, current:true, porBanco:{Bradesco:1950, Nubank:980, PicPay:471.05}},
   ];
+  meses.forEach(m => {
+    m.categorias = m.current ? categorias : categorias.map(c=>({...c, valor: c.valor*(0.85+Math.random()*0.3)}));
+    m.parcelas = m.current ? parcelas.slice(0,2) : [];
+    m.transacoes = m.current ? transacoes : [];
+  });
   const contas = [
     {banco:'Bradesco', nome:'Conta corrente', saldo:1240.50},
     {banco:'Nubank', nome:'Conta', saldo:850.00},
@@ -363,11 +373,6 @@ function getMockData(){
   const cartoes = [
     {banco:'Bradesco', nome:'Cartão Elo Grafite', limiteUsado:2355.77, limiteTotal:6000, contaId:'demo-cartao-1'},
     {banco:'Nubank', nome:'Cartão Nubank', limiteUsado:1292.00, limiteTotal:4000, contaId:'demo-cartao-2'},
-  ];
-  const transacoes = [
-    {descricao:'Supermercado Extra', valor:340.20, categoria:'Mercado', banco:'Bradesco', contaId:'demo-cartao-1'},
-    {descricao:'Uber', valor:70.10, categoria:'Transporte', banco:'Nubank', contaId:'demo-cartao-2'},
-    {descricao:'Netflix', valor:44.90, categoria:'Assinaturas', banco:'PicPay', contaId:'demo-cartao-2'},
   ];
   return {categorias, parcelas, meses, contas, cartoes, transacoes};
 }
@@ -417,17 +422,18 @@ function corBanco(nome){
 
 /* CATEGORIAS */
 function renderCategorias(targetId, limit){
-  if(!data.categorias.length){
+  const mes = data.meses[monthIdx];
+  if(!mes.categorias.length){
     document.getElementById(targetId).innerHTML = '<p class="empty">Nenhum gasto encontrado neste mês.</p>';
     return;
   }
-  const totalMes = data.categorias.reduce((s,c)=>s+c.valor,0);
-  const max = Math.max(...data.categorias.map(c=>c.valor));
-  const list = [...data.categorias].sort((a,b)=>b.valor-a.valor).slice(0, limit||99);
+  const totalMes = mes.categorias.reduce((s,c)=>s+c.valor,0);
+  const max = Math.max(...mes.categorias.map(c=>c.valor));
+  const list = [...mes.categorias].sort((a,b)=>b.valor-a.valor).slice(0, limit||99);
   const el = document.getElementById(targetId);
   el.innerHTML = list.map((c,i) => {
     const cor = corCategoria(c.nome);
-    const txs = (data.transacoes||[]).filter(t => t.categoria === c.nome).sort((a,b)=>b.valor-a.valor);
+    const txs = (mes.transacoes||[]).filter(t => t.categoria === c.nome).sort((a,b)=>b.valor-a.valor);
     const rowId = targetId+'-row-'+i;
     return `
     <div class="cat-row" data-row="${rowId}">
@@ -466,9 +472,10 @@ function renderCategorias(targetId, limit){
 
 /* PARCELAS */
 function renderParcelas(targetId, limit){
-  const list = limit ? data.parcelas.slice(0, limit) : data.parcelas;
+  const mesParcelas = data.meses[monthIdx].parcelas;
+  const list = limit ? mesParcelas.slice(0, limit) : mesParcelas;
   const el = document.getElementById(targetId);
-  if(!list.length){ el.innerHTML = '<p class="empty">Nenhuma parcela ativa.</p>'; return; }
+  if(!list.length){ el.innerHTML = '<p class="empty">Nenhuma parcela nesta fatura do mês.</p>'; return; }
   el.innerHTML = list.map(p => {
     let dots = '';
     for(let i=1;i<=p.total;i++) dots += `<div class="dot ${i<=p.atual?'filled':''}"></div>`;
@@ -555,29 +562,7 @@ function renderContas(){
 }
 
 function renderAll(){
-  const totalMes = data.categorias.reduce((s,c)=>s+c.valor,0);
-  document.getElementById('hero-total').textContent = fmt(totalMes);
-  const mesAnterior = data.meses.length>1 ? data.meses[data.meses.length-2].total : totalMes;
-  const delta = mesAnterior ? ((totalMes - mesAnterior)/mesAnterior*100) : 0;
-  const badge = document.getElementById('hero-badge');
-  badge.textContent = (delta>=0?'+':'') + delta.toFixed(1) + '%';
-  badge.classList.remove('up','down');
-  badge.classList.add(delta>0 ? 'up' : 'down');
-
-  renderCategorias('cat-list', 3);
-  renderCategorias('cat-list-full');
-  if(data.categorias.length){
-    const topCat = [...data.categorias].sort((a,b)=>b.valor-a.valor)[0];
-    document.getElementById('cat-top-hint').textContent = topCat.nome;
-  }
-  document.getElementById('cat-total-hint').textContent = fmt(totalMes);
-  document.getElementById('drawer-cat-count').textContent = data.categorias.length;
-
   renderContas();
-
-  renderParcelas('parc-list-preview', 2);
-  renderParcelas('parc-list-full');
-  document.getElementById('drawer-parc-count').textContent = data.parcelas.length;
 
   const maxMes = Math.max(1, ...data.meses.map(m=>m.total));
   const todosBancos = [...new Set(data.meses.flatMap(m => Object.keys(m.porBanco||{})))];
@@ -597,30 +582,9 @@ function renderAll(){
   document.getElementById('months-legend').innerHTML = todosBancos.map(b => `
     <span class="item"><span class="bank-dot" style="background:${corBanco(b)}; display:inline-block;"></span>${b}</span>
   `).join('');
-
-  function renderMonthDetail(idx){
-    const m = data.meses[idx];
-    const detailEl = document.getElementById('month-detail');
-    const bancos = Object.entries(m.porBanco||{}).sort((a,b)=>b[1]-a[1]);
-    if(!bancos.length){ detailEl.innerHTML = `<p class="empty">Sem gastos registrados em ${m.label}.</p>`; return; }
-    detailEl.innerHTML = `<p class="month-detail-title" style="text-transform:capitalize; font-size:13px; margin:14px 0 2px; color:var(--text); font-weight:600;">${m.label} — ${fmt(m.total)}</p>` +
-      bancos.map(([banco,valor]) => `
-        <div class="row">
-          <span class="bank-dot" style="background:${corBanco(banco)}"></span>
-          <span class="nome">${banco}</span>
-          <span class="valor num">${fmt(valor)}</span>
-          <span style="color:var(--muted); font-size:11px;">${(valor/m.total*100).toFixed(0)}%</span>
-        </div>`).join('');
-  }
   document.querySelectorAll('#months-chart .mcol').forEach(col => {
-    col.addEventListener('click', () => {
-      document.querySelectorAll('#months-chart .mcol').forEach(c=>c.classList.remove('selected'));
-      col.classList.add('selected');
-      renderMonthDetail(parseInt(col.dataset.mesIdx));
-    });
+    col.addEventListener('click', () => selectMonth(parseInt(col.dataset.mesIdx)));
   });
-  renderMonthDetail(data.meses.length-1);
-  document.querySelector(`#months-chart .mcol[data-mes-idx="${data.meses.length-1}"]`)?.classList.add('selected');
 
   document.getElementById('months-detail').innerHTML = data.meses.slice(1).map((m,i) => {
     const prev = data.meses[i].total;
@@ -635,8 +599,57 @@ function renderAll(){
     </div>`;
   }).join('');
 
-  monthIdx = data.meses.length-1;
-  paintMonthChip();
+  selectMonth(data.meses.length-1);
+}
+
+/* Troca o mês selecionado e re-renderiza Resumo, Categorias, Parcelas e o
+   detalhe do Comparativo — usado pelo seletor do topo e pelo clique nas barras. */
+function selectMonth(idx){
+  monthIdx = idx;
+  const m = data.meses[idx];
+
+  document.getElementById('month-chip').textContent = m.label + ' ' + new Date().getFullYear();
+  document.getElementById('hero-kicker').textContent = 'total gasto em ' + m.label;
+  document.getElementById('hero-total').textContent = fmt(m.total);
+  const mesAnterior = idx>0 ? data.meses[idx-1].total : m.total;
+  const delta = mesAnterior ? ((m.total - mesAnterior)/mesAnterior*100) : 0;
+  const badge = document.getElementById('hero-badge');
+  badge.textContent = (delta>=0?'+':'') + delta.toFixed(1) + '%';
+  badge.classList.remove('up','down');
+  badge.classList.add(delta>0 ? 'up' : 'down');
+
+  renderCategorias('cat-list', 3);
+  renderCategorias('cat-list-full');
+  if(m.categorias.length){
+    const topCat = [...m.categorias].sort((a,b)=>b.valor-a.valor)[0];
+    document.getElementById('cat-top-hint').textContent = topCat.nome;
+  } else {
+    document.getElementById('cat-top-hint').textContent = '';
+  }
+  document.getElementById('cat-total-hint').textContent = fmt(m.total);
+  document.getElementById('drawer-cat-count').textContent = m.categorias.length;
+
+  renderParcelas('parc-list-preview', 2);
+  renderParcelas('parc-list-full');
+  document.getElementById('drawer-parc-count').textContent = m.parcelas.length;
+
+  document.querySelectorAll('#months-chart .mcol').forEach(c=>c.classList.remove('selected'));
+  document.querySelector(`#months-chart .mcol[data-mes-idx="${idx}"]`)?.classList.add('selected');
+
+  const detailEl = document.getElementById('month-detail');
+  const bancos = Object.entries(m.porBanco||{}).sort((a,b)=>b[1]-a[1]);
+  if(!bancos.length){
+    detailEl.innerHTML = `<p class="empty">Sem gastos registrados em ${m.label}.</p>`;
+  } else {
+    detailEl.innerHTML = `<p style="text-transform:capitalize; font-size:13px; margin:14px 0 2px; color:var(--text); font-weight:600;">${m.label} — ${fmt(m.total)}</p>` +
+      bancos.map(([banco,valor]) => `
+        <div class="row">
+          <span class="bank-dot" style="background:${corBanco(banco)}"></span>
+          <span class="nome">${banco}</span>
+          <span class="valor num">${fmt(valor)}</span>
+          <span style="color:var(--muted); font-size:11px;">${(valor/m.total*100).toFixed(0)}%</span>
+        </div>`).join('');
+  }
 }
 
 /* Carrega dados reais; se falhar, cai pros dados de exemplo e avisa na tela */
@@ -679,17 +692,13 @@ function closeDrawer(){ drawer.classList.remove('open'); scrim.classList.remove(
 hamburger.addEventListener('click', ()=> drawer.classList.contains('open') ? closeDrawer() : openDrawer());
 scrim.addEventListener('click', closeDrawer);
 
-/* MONTH SWITCH (visual only — troca o rótulo do mês no topo) */
+/* MONTH SWITCH (topo do app) */
 let monthIdx = 0;
-function paintMonthChip(){
-  if(!data || !data.meses.length) return;
-  document.getElementById('month-chip').textContent = data.meses[monthIdx].label + ' ' + new Date().getFullYear();
-}
 document.getElementById('month-prev').addEventListener('click', ()=>{
-  if(data && monthIdx>0){ monthIdx--; paintMonthChip(); }
+  if(data && monthIdx>0) selectMonth(monthIdx-1);
 });
 document.getElementById('month-next').addEventListener('click', ()=>{
-  if(data && monthIdx<data.meses.length-1){ monthIdx++; paintMonthChip(); }
+  if(data && monthIdx<data.meses.length-1) selectMonth(monthIdx+1);
 });
 
 /* SERVICE WORKER */
