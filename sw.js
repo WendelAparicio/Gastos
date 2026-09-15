@@ -1,4 +1,4 @@
-const CACHE = 'meus-gastos-v8';
+const CACHE = 'meus-gastos-v11';
 const ASSETS = [
   'index.html',
   'manifest.json',

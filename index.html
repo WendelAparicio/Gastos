@@ -131,12 +131,12 @@
   .cat-row.open .chev{transform:rotate(90deg);}
   .cat-detail{max-height:0; overflow:hidden; transition:max-height .25s ease;}
   .cat-detail.open{max-height:600px;}
-  .cat-tx{display:flex; align-items:center; gap:10px; padding:9px 0 9px 4px; font-size:12.5px; border-top:1px solid var(--line);}
+  .cat-tx{display:flex; align-items:flex-start; gap:10px; padding:10px 0 10px 4px; font-size:12.5px; border-top:1px solid var(--line);}
   .bank-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
-  .cat-tx .bank-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
-  .cat-tx .tx-desc{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text);}
-  .cat-tx .tx-bank{color:var(--muted); font-size:10.5px; flex-shrink:0;}
-  .cat-tx .tx-val{color:var(--muted); flex-shrink:0; white-space:nowrap;}
+  .cat-tx .bank-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:4px;}
+  .cat-tx .tx-desc{flex:1; min-width:0; overflow-wrap:break-word; white-space:normal; color:var(--text); line-height:1.4;}
+  .cat-tx .tx-bank{color:var(--muted); font-size:10.5px; flex-shrink:0; white-space:nowrap; padding-top:1px;}
+  .cat-tx .tx-val{color:var(--muted); flex-shrink:0; white-space:nowrap; padding-top:1px;}
   .cat-left{display:flex; flex-direction:column; gap:7px; flex:1; margin-right:16px; min-width:0;}
   .cat-name{font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block;}
   .cat-track{height:5px; background:var(--panel-2); border-radius:10px; overflow:hidden;}
@@ -144,16 +144,19 @@
   .cat-val{font-size:14px; white-space:nowrap;}
   .cat-pct{font-size:11px; color:var(--muted); margin-left:7px;}
 
-  .parc-row{padding:14px 0; border-bottom:1px solid var(--line);}
-  .parc-row:last-child{border-bottom:none;}
-  .parc-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:9px; gap:10px;}
-  .parc-name{font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
-  .parc-val{font-size:14px; white-space:nowrap; flex-shrink:0;}
-  .parc-meta{font-size:11px; color:var(--muted); margin-bottom:8px;}
-  .dots{display:flex; gap:4px;}
-  .dot{flex:1; height:5px; border-radius:10px; background:var(--panel-2);}
-  .dot.filled{background:var(--red);}
-  .parc-restam{font-size:11px; color:var(--red); margin-top:7px;}
+  .parc-row{padding:14px 14px 15px; margin-bottom:10px; border-radius:14px; background:var(--panel-2); border-left:3px solid var(--gold);}
+  .parc-row:last-child{margin-bottom:0;}
+  .parc-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;}
+  .parc-banco{display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em;}
+  .parc-badge{font-size:10.5px; padding:3px 9px; border-radius:20px; font-weight:600; white-space:nowrap; flex-shrink:0;}
+  .parc-badge.last{background:rgba(240,87,107,.16); color:var(--red);}
+  .parc-badge.ok{background:rgba(139,143,163,.14); color:var(--muted);}
+  .parc-top{display:flex; justify-content:space-between; align-items:baseline; margin:6px 0 10px; gap:10px;}
+  .parc-name{font-size:14.5px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
+  .parc-val{font-size:15px; font-family:'Spectral', serif; font-weight:500; white-space:nowrap; flex-shrink:0;}
+  .parc-meta{font-size:11.5px; color:var(--muted); margin-bottom:8px;}
+  .parc-track{height:6px; border-radius:10px; background:var(--panel); overflow:hidden;}
+  .parc-fill{height:100%; border-radius:10px;}
 
   .empty{color:var(--muted); font-size:13px; padding:24px 0; text-align:center;}
 
@@ -281,6 +284,10 @@
       <p class="sec-title">Cartões de crédito</p>
       <div id="cartoes-list"></div>
     </section>
+    <section>
+      <p class="sec-title">Investimentos <span class="hint">caixinhas e CDBs</span></p>
+      <div id="investimentos-list"></div>
+    </section>
   </div>
 
   <!-- VIEW: CATEGORIAS -->
@@ -371,7 +378,10 @@ function getMockData(){
     {banco:'Bradesco', nome:'Cartão Elo Grafite', limiteUsado:2355.77, limiteTotal:6000, contaId:'demo-cartao-1'},
     {banco:'Nubank', nome:'Cartão Nubank', limiteUsado:1292.00, limiteTotal:4000, contaId:'demo-cartao-2'},
   ];
-  return {categorias, parcelas, meses, contas, cartoes, transacoes};
+  const investimentos = [
+    {banco:'Nubank', nome:'CDB / Caixinha', valor:502.23, taxa:'120% CDI'},
+  ];
+  return {categorias, parcelas, meses, contas, cartoes, transacoes, investimentos};
 }
 
 async function fetchRealData(){
@@ -474,18 +484,21 @@ function renderParcelas(targetId, limit){
   const el = document.getElementById(targetId);
   if(!list.length){ el.innerHTML = '<p class="empty">Nenhuma parcela nesta fatura do mês.</p>'; return; }
   el.innerHTML = list.map(p => {
-    let dots = '';
-    for(let i=1;i<=p.total;i++) dots += `<div class="dot ${i<=p.atual?'filled':''}"></div>`;
     const restam = p.total - p.atual;
+    const pct = Math.min(100, (p.atual/p.total*100));
+    const corB = corBanco(p.banco);
     return `
-      <div class="parc-row">
+      <div class="parc-row" style="border-left-color:${corB}">
+        <div class="parc-head">
+          <span class="parc-banco">${p.banco ? `<span class="bank-dot" style="background:${corB}; display:inline-block;"></span>${p.banco}` : ''}</span>
+          <span class="parc-badge ${restam===0?'last':'ok'}">${restam===0?'última parcela':restam+(restam===1?' restante':' restantes')}</span>
+        </div>
         <div class="parc-top">
           <span class="parc-name">${p.nome}</span>
           <span class="parc-val num">${fmt(p.valor)}</span>
         </div>
-        <div class="parc-meta">${p.banco ? `<span class="bank-dot" style="background:${corBanco(p.banco)}; display:inline-block; margin-right:5px;"></span>${p.banco} · ` : ''}parcela ${p.atual} de ${p.total}</div>
-        <div class="dots">${dots}</div>
-        <div class="parc-restam">${restam===0?'última parcela':'faltam '+restam+(restam===1?' parcela':' parcelas')}</div>
+        <div class="parc-track"><div class="parc-fill" style="width:${pct.toFixed(0)}%; background:${corB}"></div></div>
+        <div class="parc-meta" style="margin-top:7px; margin-bottom:0;">parcela ${p.atual} de ${p.total}</div>
       </div>`;
   }).join('');
 }
@@ -555,6 +568,23 @@ function renderContas(){
         if(!isOpen){ detail.classList.add('open'); card.classList.add('open'); }
       });
     });
+  }
+
+  const investimentos = data.investimentos || [];
+  const investEl = document.getElementById('investimentos-list');
+  if(!investEl){
+    // view ainda não existe nesta versão do HTML, ignora silenciosamente
+  } else if(!investimentos.length){
+    investEl.innerHTML = '<p class="empty">Nenhum investimento encontrado.</p>';
+  } else {
+    investEl.innerHTML = investimentos.map(inv => `
+      <div class="conta-row">
+        <div class="conta-left">
+          <span class="conta-banco"><span class="bank-dot" style="background:${corBanco(inv.banco)}; display:inline-block; margin-right:6px;"></span>${inv.banco}</span>
+          <span class="conta-nome">${inv.nome}${inv.taxa ? ' · '+inv.taxa : ''}</span>
+        </div>
+        <span class="conta-saldo num">${fmt(inv.valor)}</span>
+      </div>`).join('');
   }
 }
 
