@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Meus Gastos</title>
+<meta name="theme-color" content="#12130F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Meus Gastos">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12130F;
+    --panel:#181A14;
+    --panel-2:#1E2019;
+    --line:#2A2C23;
+    --text:#EDEADD;
+    --muted:#8D8B7C;
+    --gold:#C9A227;
+    --gold-dim:#8A7220;
+    --red:#B5504F;
+    --green:#6C8A56;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif; -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y:none;}
+  body{min-height:100vh; padding-top:56px;}
+  .num{font-feature-settings:"tnum" 1; font-variant-numeric: tabular-nums;}
+  ::selection{background:var(--gold); color:#12130F;}
+
+  /* ---------- TOP APP BAR ---------- */
+  .appbar{position:fixed; top:0; left:0; right:0; height:56px; z-index:30;
+    display:flex; align-items:center; gap:4px; padding:0 6px 0 4px;
+    background:rgba(18,19,15,.92); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);}
+  .hamburger{width:44px; height:44px; background:none; border:none; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;}
+  .hamburger span{display:block; width:19px; height:2px; background:var(--text); border-radius:2px;
+    transition:transform .25s ease, opacity .2s ease;}
+  .hamburger.open span:nth-child(1){transform:translateY(6px) rotate(45deg);}
+  .hamburger.open span:nth-child(2){opacity:0;}
+  .hamburger.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
+
+  .appbar-title{flex:1; display:flex; flex-direction:column; line-height:1.15; padding-left:2px;}
+  .appbar-title .eyebrow{font-size:10.5px; color:var(--muted); letter-spacing:.01em;}
+  .appbar-title .view-name{font-family:'Spectral', serif; font-size:16px; font-weight:600;}
+
+  .month-switch{display:flex; align-items:center; gap:2px;}
+  .month-switch button{width:32px; height:32px; background:none; border:none; color:var(--muted);
+    cursor:pointer; border-radius:8px; display:flex; align-items:center; justify-content:center;}
+  .month-switch button:active{background:var(--panel-2); color:var(--gold);}
+  .month-switch button svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2;}
+  .month-switch .mchip{font-size:11.5px; color:var(--text); padding:0 4px; text-transform:capitalize;
+    min-width:56px; text-align:center;}
+
+  /* ---------- DRAWER ---------- */
+  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.55); opacity:0; pointer-events:none;
+    transition:opacity .25s ease; z-index:40;}
+  .scrim.open{opacity:1; pointer-events:auto;}
+
+  .drawer{position:fixed; top:0; left:0; bottom:0; width:78%; max-width:300px;
+    background:var(--panel); border-right:1px solid var(--line); z-index:50;
+    transform:translateX(-105%); transition:transform .28s cubic-bezier(.2,.9,.25,1);
+    display:flex; flex-direction:column; padding-top:env(safe-area-inset-top);}
+  .drawer.open{transform:translateX(0);}
+
+  .drawer-head{padding:24px 22px 18px; border-bottom:1px solid var(--line);}
+  .drawer-head .mark{width:34px; height:34px; border:1.5px solid var(--gold); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; margin-bottom:14px;}
+  .drawer-head .mark::after{content:''; width:6px; height:6px; background:var(--gold); border-radius:1px;}
+  .drawer-head h2{font-family:'Spectral', serif; font-size:19px; margin:0 0 3px; font-weight:600;}
+  .drawer-head p{font-size:12px; color:var(--muted); margin:0;}
+
+  .drawer-nav{flex:1; padding:10px 10px; overflow-y:auto;}
+  .drawer-item{display:flex; align-items:center; gap:14px; width:100%; text-align:left;
+    background:none; border:none; color:var(--muted); padding:13px 12px; border-radius:10px;
+    font-family:inherit; font-size:14.5px; cursor:pointer; margin-bottom:2px;}
+  .drawer-item svg{width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.6; flex-shrink:0;}
+  .drawer-item.active{background:var(--panel-2); color:var(--gold);}
+  .drawer-item .count{margin-left:auto; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums;}
+  .drawer-item.active .count{color:var(--gold);}
+
+  .drawer-foot{padding:16px 22px calc(18px + env(safe-area-inset-bottom)); border-top:1px solid var(--line);}
+  .drawer-foot .status{display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--muted);}
+  .drawer-foot .dot{width:7px; height:7px; border-radius:50%; background:var(--gold-dim); flex-shrink:0;}
+
+  /* ---------- CONTENT ---------- */
+  main{padding-bottom:48px;}
+  .hero{padding:26px 20px 10px;}
+  .hero .kicker{font-size:12.5px; color:var(--muted); margin:0 0 8px; text-transform:capitalize;}
+  .hero .total{font-family:'Spectral', serif; font-weight:600; font-size:46px; line-height:1; letter-spacing:-.01em;}
+  .hero .sub{margin-top:12px; font-size:13px; color:var(--muted); display:flex; gap:8px; align-items:center;}
+  .hero .sub b{color:var(--text); font-weight:600;}
+  .hero .pillbadge{font-size:11.5px; padding:2px 9px; border-radius:20px; font-weight:600;}
+  .pillbadge.up{background:rgba(181,80,79,.16); color:var(--red);}
+  .pillbadge.down{background:rgba(108,138,86,.16); color:var(--green);}
+
+  section{padding:20px;}
+  section + section{border-top:1px solid var(--line);}
+  .sec-title{font-size:12px; letter-spacing:.02em; color:var(--muted); margin:0 0 16px;
+    display:flex; justify-content:space-between; align-items:baseline;}
+  .sec-title span.hint{font-size:11px; color:var(--gold-dim);}
+  .sec-link{background:none; border:none; color:var(--gold-dim); font-size:11.5px; font-family:inherit; cursor:pointer;}
+
+  .months{display:flex; align-items:flex-end; gap:10px; height:130px; padding-top:8px;}
+  .mcol{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+  .mcol .bar{width:100%; max-width:28px; background:var(--panel-2); border-radius:3px 3px 0 0;
+    transition:background .15s; border:1px solid var(--line); border-bottom:none;}
+  .mcol.current .bar{background:var(--gold); border-color:var(--gold);}
+  .mcol .mlabel{font-size:10.5px; color:var(--muted); margin-top:9px; text-transform:capitalize;}
+  .mcol.current .mlabel{color:var(--text); font-weight:600;}
+
+  .cat-row{display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line);}
+  .cat-row:last-child{border-bottom:none;}
+  .cat-left{display:flex; flex-direction:column; gap:7px; flex:1; margin-right:16px; min-width:0;}
+  .cat-name{font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block;}
+  .cat-track{height:3px; background:var(--panel-2); border-radius:2px; overflow:hidden;}
+  .cat-fill{height:100%; background:var(--gold); border-radius:2px;}
+  .cat-val{font-size:14px; white-space:nowrap;}
+  .cat-pct{font-size:11px; color:var(--muted); margin-left:7px;}
+
+  .parc-row{padding:14px 0; border-bottom:1px solid var(--line);}
+  .parc-row:last-child{border-bottom:none;}
+  .parc-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:9px; gap:10px;}
+  .parc-name{font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
+  .parc-val{font-size:14px; white-space:nowrap; flex-shrink:0;}
+  .parc-meta{font-size:11px; color:var(--muted); margin-bottom:8px;}
+  .dots{display:flex; gap:4px;}
+  .dot{flex:1; height:4px; border-radius:2px; background:var(--panel-2);}
+  .dot.filled{background:var(--red);}
+  .parc-restam{font-size:11px; color:var(--red); margin-top:7px;}
+
+  .empty{color:var(--muted); font-size:13px; padding:24px 0; text-align:center;}
+
+  .view{display:none;}
+  .view.active{display:block; animation:fadein .22s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  .config-note{margin:20px; padding:15px 16px; background:var(--panel); border:1px solid var(--line);
+    border-radius:10px; font-size:12px; color:var(--muted); line-height:1.55;}
+  .config-note b{color:var(--text);}
+
+  @media (min-width:560px){
+    body{max-width:480px; margin:0 auto; border-left:1px solid var(--line); border-right:1px solid var(--line);}
+    .appbar{max-width:480px; margin:0 auto; left:0; right:0;}
+  }
+</style>
+</head>
+<body>
+
+<div class="scrim" id="scrim"></div>
+
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="mark"></div>
+    <h2>Meus Gastos</h2>
+    <p>Controle financeiro pessoal</p>
+  </div>
+  <nav class="drawer-nav">
+    <button class="drawer-item active" data-view="resumo">
+      <svg viewBox="0 0 24 24"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-7h6v7"/></svg>
+      Resumo do mês
+    </button>
+    <button class="drawer-item" data-view="categorias">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg>
+      Categorias
+      <span class="count" id="drawer-cat-count"></span>
+    </button>
+    <button class="drawer-item" data-view="parcelas">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>
+      Parcelas ativas
+      <span class="count" id="drawer-parc-count"></span>
+    </button>
+    <button class="drawer-item" data-view="comparativo">
+      <svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M11 20V4"/><path d="M18 20v-7"/></svg>
+      Comparativo mensal
+    </button>
+  </nav>
+  <div class="drawer-foot">
+    <div class="status"><span class="dot"></span> Dados de exemplo — Pluggy ainda não conectada</div>
+  </div>
+</aside>
+
+<div class="appbar">
+  <button class="hamburger" id="hamburger" aria-label="Abrir menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="appbar-title">
+    <span class="eyebrow">Meus Gastos</span>
+    <span class="view-name" id="appbar-view-name">Resumo</span>
+  </div>
+  <div class="month-switch">
+    <button id="month-prev" aria-label="Mês anterior"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <span class="mchip" id="month-chip">set 2026</span>
+    <button id="month-next" aria-label="Próximo mês"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>
+</div>
+
+<main>
+  <!-- VIEW: RESUMO -->
+  <div class="view active" id="view-resumo">
+    <div class="hero">
+      <p class="kicker" id="hero-kicker">total gasto em setembro</p>
+      <div class="total num" id="hero-total">R$ 0,00</div>
+      <div class="sub">
+        <span class="pillbadge" id="hero-badge">—</span>
+        <span>vs. mês anterior</span>
+      </div>
+    </div>
+
+    <section>
+      <p class="sec-title">Onde mais gastei <span class="hint" id="cat-top-hint"></span></p>
+      <div id="cat-list"></div>
+    </section>
+
+    <section>
+      <p class="sec-title">Parcelas em andamento</p>
+      <div id="parc-list-preview"></div>
+    </section>
+  </div>
+
+  <!-- VIEW: CATEGORIAS -->
+  <div class="view" id="view-categorias">
+    <section>
+      <p class="sec-title">Gastos por categoria <span class="hint" id="cat-total-hint"></span></p>
+      <div id="cat-list-full"></div>
+    </section>
+  </div>
+
+  <!-- VIEW: PARCELAS -->
+  <div class="view" id="view-parcelas">
+    <section>
+      <p class="sec-title">Todas as parcelas ativas</p>
+      <div id="parc-list-full"></div>
+    </section>
+  </div>
+
+  <!-- VIEW: COMPARATIVO -->
+  <div class="view" id="view-comparativo">
+    <section>
+      <p class="sec-title">Últimos 6 meses</p>
+      <div class="months" id="months-chart"></div>
+    </section>
+    <section>
+      <p class="sec-title">Variação mês a mês</p>
+      <div id="months-detail"></div>
+    </section>
+  </div>
+
+  <div class="config-note">
+    <b>Dados de exemplo.</b> Este app ainda está usando dados fictícios para você validar o layout. O próximo passo é ligar a busca real de extratos e faturas via API da Pluggy (contas conectadas em meu.pluggy.ai) no lugar da função <code>getMockData()</code> no código.
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DADOS
+   Troque getMockData() por uma chamada real à API da Pluggy
+   quando as contas estiverem conectadas em meu.pluggy.ai.
+   Formato esperado de cada transação:
+   { desc, categoria, valor, data, parcelaAtual, parcelaTotal }
+   ============================================================ */
+/* ============================================================
+   CONFIG — Edge Function do Supabase que busca os dados na Pluggy
+   ============================================================ */
+const SUPABASE_FUNCTION_URL = 'https://nxnnhzjnherwvjkotglu.supabase.co/functions/v1/gastos-mensais';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54bm5oempuaGVyd3Zqa290Z2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0NzM5MTMsImV4cCI6MjEwNTA0OTkxM30.dfxxuDMapMrxbRvtDJuXoeIqPs4TSopbXx17YdTPJwI';
+
+function getMockData(){
+  const categorias = [
+    {nome:'Mercado', valor:1240.30},
+    {nome:'Alimentação', valor:680.90},
+    {nome:'Transporte', valor:410.00},
+    {nome:'Assinaturas', valor:189.70},
+    {nome:'Casa', valor:560.00},
+    {nome:'Lazer', valor:320.15},
+  ];
+  const parcelas = [
+    {nome:'Notebook Dell', valor:349.00, atual:3, total:10},
+    {nome:'Geladeira', valor:210.50, atual:8, total:12},
+    {nome:'Celular', valor:180.00, atual:11, total:12},
+    {nome:'Sofá', valor:265.00, atual:2, total:6},
+  ];
+  const meses = [
+    {label:'abr', total:3120},
+    {label:'mai', total:3480},
+    {label:'jun', total:2990},
+    {label:'jul', total:3610},
+    {label:'ago', total:3255},
+    {label:'set', total:3401.05, current:true},
+  ];
+  return {categorias, parcelas, meses};
+}
+
+async function fetchRealData(){
+  const res = await fetch(SUPABASE_FUNCTION_URL, {
+    headers: {
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'apikey': SUPABASE_ANON_KEY,
+    },
+  });
+  if(!res.ok) throw new Error('Edge Function retornou ' + res.status);
+  const json = await res.json();
+  if(json.error) throw new Error(json.error);
+  if(!json.categorias?.length && !json.meses?.length) throw new Error('Resposta vazia');
+  return json;
+}
+
+const fmt = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+let data = null;
+
+/* CATEGORIAS */
+function renderCategorias(targetId, limit){
+  if(!data.categorias.length){
+    document.getElementById(targetId).innerHTML = '<p class="empty">Nenhum gasto encontrado neste mês.</p>';
+    return;
+  }
+  const totalMes = data.categorias.reduce((s,c)=>s+c.valor,0);
+  const max = Math.max(...data.categorias.map(c=>c.valor));
+  const list = [...data.categorias].sort((a,b)=>b.valor-a.valor).slice(0, limit||99);
+  const el = document.getElementById(targetId);
+  el.innerHTML = list.map(c => `
+    <div class="cat-row">
+      <div class="cat-left">
+        <span class="cat-name">${c.nome}</span>
+        <div class="cat-track"><div class="cat-fill" style="width:${(c.valor/max*100).toFixed(0)}%"></div></div>
+      </div>
+      <div>
+        <span class="cat-val num">${fmt(c.valor)}</span>
+        <span class="cat-pct num">${(c.valor/totalMes*100).toFixed(0)}%</span>
+      </div>
+    </div>`).join('');
+}
+
+/* PARCELAS */
+function renderParcelas(targetId, limit){
+  const list = limit ? data.parcelas.slice(0, limit) : data.parcelas;
+  const el = document.getElementById(targetId);
+  if(!list.length){ el.innerHTML = '<p class="empty">Nenhuma parcela ativa.</p>'; return; }
+  el.innerHTML = list.map(p => {
+    let dots = '';
+    for(let i=1;i<=p.total;i++) dots += `<div class="dot ${i<=p.atual?'filled':''}"></div>`;
+    const restam = p.total - p.atual;
+    return `
+      <div class="parc-row">
+        <div class="parc-top">
+          <span class="parc-name">${p.nome}</span>
+          <span class="parc-val num">${fmt(p.valor)}</span>
+        </div>
+        <div class="parc-meta">parcela ${p.atual} de ${p.total}</div>
+        <div class="dots">${dots}</div>
+        <div class="parc-restam">${restam===0?'última parcela':'faltam '+restam+(restam===1?' parcela':' parcelas')}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderAll(){
+  const totalMes = data.categorias.reduce((s,c)=>s+c.valor,0);
+  document.getElementById('hero-total').textContent = fmt(totalMes);
+  const mesAnterior = data.meses.length>1 ? data.meses[data.meses.length-2].total : totalMes;
+  const delta = mesAnterior ? ((totalMes - mesAnterior)/mesAnterior*100) : 0;
+  const badge = document.getElementById('hero-badge');
+  badge.textContent = (delta>=0?'+':'') + delta.toFixed(1) + '%';
+  badge.classList.remove('up','down');
+  badge.classList.add(delta>0 ? 'up' : 'down');
+
+  renderCategorias('cat-list', 3);
+  renderCategorias('cat-list-full');
+  if(data.categorias.length){
+    const topCat = [...data.categorias].sort((a,b)=>b.valor-a.valor)[0];
+    document.getElementById('cat-top-hint').textContent = topCat.nome;
+  }
+  document.getElementById('cat-total-hint').textContent = fmt(totalMes);
+  document.getElementById('drawer-cat-count').textContent = data.categorias.length;
+
+  renderParcelas('parc-list-preview', 2);
+  renderParcelas('parc-list-full');
+  document.getElementById('drawer-parc-count').textContent = data.parcelas.length;
+
+  const maxMes = Math.max(1, ...data.meses.map(m=>m.total));
+  document.getElementById('months-chart').innerHTML = data.meses.map(m => `
+    <div class="mcol ${m.current?'current':''}">
+      <div class="bar" style="height:${(m.total/maxMes*100).toFixed(0)}%"></div>
+      <div class="mlabel">${m.label}</div>
+    </div>`).join('');
+
+  document.getElementById('months-detail').innerHTML = data.meses.slice(1).map((m,i) => {
+    const prev = data.meses[i].total;
+    const d = prev ? ((m.total-prev)/prev*100) : 0;
+    return `
+    <div class="cat-row">
+      <div class="cat-left"><span class="cat-name" style="text-transform:capitalize">${m.label}</span></div>
+      <div>
+        <span class="cat-val num">${fmt(m.total)}</span>
+        <span class="cat-pct num" style="color:${d>0?'var(--red)':'var(--green)'}">${d>=0?'+':''}${d.toFixed(1)}%</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  monthIdx = data.meses.length-1;
+  paintMonthChip();
+}
+
+/* Carrega dados reais; se falhar, cai pros dados de exemplo e avisa na tela */
+(async () => {
+  const statusEl = document.querySelector('.drawer-foot .status');
+  try{
+    data = await fetchRealData();
+    if(statusEl){
+      statusEl.innerHTML = '<span class="dot" style="background:var(--green)"></span> Conectado à Pluggy — dados reais';
+    }
+  }catch(err){
+    console.warn('Falha ao buscar dados reais, usando exemplo:', err.message);
+    data = getMockData();
+    if(statusEl){
+      statusEl.innerHTML = '<span class="dot" style="background:var(--red)"></span> Sem conexão — mostrando dados de exemplo';
+    }
+  }
+  renderAll();
+})();
+
+/* NAV via drawer */
+const viewNames = {resumo:'Resumo', categorias:'Categorias', parcelas:'Parcelas', comparativo:'Comparativo'};
+function goToView(name){
+  document.querySelectorAll('.drawer-item').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.getElementById('appbar-view-name').textContent = viewNames[name];
+  closeDrawer();
+}
+document.querySelectorAll('.drawer-item').forEach(btn=>{
+  btn.addEventListener('click', ()=> goToView(btn.dataset.view));
+});
+
+/* DRAWER open/close */
+const drawer = document.getElementById('drawer');
+const scrim = document.getElementById('scrim');
+const hamburger = document.getElementById('hamburger');
+function openDrawer(){ drawer.classList.add('open'); scrim.classList.add('open'); hamburger.classList.add('open'); }
+function closeDrawer(){ drawer.classList.remove('open'); scrim.classList.remove('open'); hamburger.classList.remove('open'); }
+hamburger.addEventListener('click', ()=> drawer.classList.contains('open') ? closeDrawer() : openDrawer());
+scrim.addEventListener('click', closeDrawer);
+
+/* MONTH SWITCH (visual only — troca o rótulo do mês no topo) */
+let monthIdx = 0;
+function paintMonthChip(){
+  if(!data || !data.meses.length) return;
+  document.getElementById('month-chip').textContent = data.meses[monthIdx].label + ' ' + new Date().getFullYear();
+}
+document.getElementById('month-prev').addEventListener('click', ()=>{
+  if(data && monthIdx>0){ monthIdx--; paintMonthChip(); }
+});
+document.getElementById('month-next').addEventListener('click', ()=>{
+  if(data && monthIdx<data.meses.length-1){ monthIdx++; paintMonthChip(); }
+});
+
+/* SERVICE WORKER */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
