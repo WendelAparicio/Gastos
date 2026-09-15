@@ -92,7 +92,7 @@
 
   /* ---------- CONTENT ---------- */
   main{padding-bottom:48px;}
-  .hero{padding:26px 20px 10px;}
+  .hero{padding:22px 20px; margin:12px 16px 12px; background:var(--panel); border-radius:20px;}
   .hero .kicker{font-size:12.5px; color:var(--muted); margin:0 0 8px; text-transform:capitalize;}
   .hero .total{font-family:'Spectral', serif; font-weight:600; font-size:46px; line-height:1; letter-spacing:-.01em;}
   .hero .sub{margin-top:12px; font-size:13px; color:var(--muted); display:flex; gap:8px; align-items:center;}
@@ -101,20 +101,29 @@
   .pillbadge.up{background:rgba(181,80,79,.16); color:var(--red);}
   .pillbadge.down{background:rgba(108,138,86,.16); color:var(--green);}
 
-  section{padding:20px;}
-  section + section{border-top:1px solid var(--line);}
+  section{padding:18px 18px 20px; background:var(--panel); border-radius:20px; margin:0 16px 12px;}
+  section:first-of-type{margin-top:4px;}
   .sec-title{font-size:12px; letter-spacing:.02em; color:var(--muted); margin:0 0 16px;
     display:flex; justify-content:space-between; align-items:baseline;}
   .sec-title span.hint{font-size:11px; color:var(--gold-dim);}
   .sec-link{background:none; border:none; color:var(--gold-dim); font-size:11.5px; font-family:inherit; cursor:pointer;}
 
   .months{display:flex; align-items:flex-end; gap:10px; height:130px; padding-top:8px;}
-  .mcol{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
-  .mcol .bar{width:100%; max-width:28px; background:var(--panel-2); border-radius:3px 3px 0 0;
-    transition:background .15s; border:1px solid var(--line); border-bottom:none;}
-  .mcol.current .bar{background:var(--gold); border-color:var(--gold);}
+  .mcol{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; cursor:pointer;}
+  .mcol .bar-stack{width:100%; max-width:30px; display:flex; flex-direction:column-reverse; border-radius:10px; overflow:hidden; transition:transform .15s ease;}
+  .mcol:active .bar-stack{transform:scale(.94);}
+  .mcol .bar-seg{width:100%;}
+  .mcol.current .bar-stack{outline:2px solid var(--gold); outline-offset:2px;}
+  .mcol.selected .bar-stack{outline:2px solid var(--text); outline-offset:2px;}
   .mcol .mlabel{font-size:10.5px; color:var(--muted); margin-top:9px; text-transform:capitalize;}
   .mcol.current .mlabel{color:var(--text); font-weight:600;}
+  .bank-legend{display:flex; flex-wrap:wrap; gap:12px 16px; padding:14px 0 4px; border-top:1px solid var(--line); margin-top:14px;}
+  .bank-legend .item{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted);}
+  .month-detail{margin-top:4px;}
+  .month-detail .row{display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--line); font-size:13px;}
+  .month-detail .row .nome{flex:1;}
+  .month-detail .row .valor{font-variant-numeric:tabular-nums;}
+  .month-detail .title{font-size:12px; color:var(--muted); margin:14px 0 2px; text-transform:capitalize;}
 
   .cat-row{display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line); cursor:pointer;}
   .cat-row:last-child{border-bottom:none;}
@@ -123,14 +132,15 @@
   .cat-detail{max-height:0; overflow:hidden; transition:max-height .25s ease;}
   .cat-detail.open{max-height:600px;}
   .cat-tx{display:flex; align-items:center; gap:10px; padding:9px 0 9px 4px; font-size:12.5px; border-top:1px solid var(--line);}
+  .bank-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
   .cat-tx .bank-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
   .cat-tx .tx-desc{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text);}
   .cat-tx .tx-bank{color:var(--muted); font-size:10.5px; flex-shrink:0;}
   .cat-tx .tx-val{color:var(--muted); flex-shrink:0; white-space:nowrap;}
   .cat-left{display:flex; flex-direction:column; gap:7px; flex:1; margin-right:16px; min-width:0;}
   .cat-name{font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block;}
-  .cat-track{height:3px; background:var(--panel-2); border-radius:2px; overflow:hidden;}
-  .cat-fill{height:100%; background:var(--gold); border-radius:2px;}
+  .cat-track{height:5px; background:var(--panel-2); border-radius:10px; overflow:hidden;}
+  .cat-fill{height:100%; border-radius:10px;}
   .cat-val{font-size:14px; white-space:nowrap;}
   .cat-pct{font-size:11px; color:var(--muted); margin-left:7px;}
 
@@ -141,7 +151,7 @@
   .parc-val{font-size:14px; white-space:nowrap; flex-shrink:0;}
   .parc-meta{font-size:11px; color:var(--muted); margin-bottom:8px;}
   .dots{display:flex; gap:4px;}
-  .dot{flex:1; height:4px; border-radius:2px; background:var(--panel-2);}
+  .dot{flex:1; height:5px; border-radius:10px; background:var(--panel-2);}
   .dot.filled{background:var(--red);}
   .parc-restam{font-size:11px; color:var(--red); margin-top:7px;}
 
@@ -155,15 +165,17 @@
   .conta-nome{font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .conta-saldo{font-size:15px; font-family:'Spectral', serif; font-weight:500; white-space:nowrap; flex-shrink:0;}
 
-  .cartao-card{padding:15px 0; border-bottom:1px solid var(--line);}
+  .cartao-card{padding:15px 0; border-bottom:1px solid var(--line); cursor:pointer;}
   .cartao-card:last-child{border-bottom:none;}
+  .cartao-card .chev{width:14px; height:14px; stroke:var(--muted); fill:none; stroke-width:2; transition:transform .2s ease;}
+  .cartao-card.open .chev{transform:rotate(90deg);}
   .cartao-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; gap:10px;}
   .cartao-banco{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em;}
   .cartao-nome{font-size:14px; margin-bottom:9px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .cartao-usado{font-size:15px; font-family:'Spectral', serif; font-weight:500;}
   .cartao-limite{font-size:11px; color:var(--muted);}
-  .cartao-track{height:5px; background:var(--panel-2); border-radius:3px; overflow:hidden; margin-top:8px;}
-  .cartao-fill{height:100%; border-radius:3px;}
+  .cartao-track{height:6px; background:var(--panel-2); border-radius:10px; overflow:hidden; margin-top:8px;}
+  .cartao-fill{height:100%; border-radius:10px;}
   .cartao-fill.ok{background:var(--gold);}
   .cartao-fill.alto{background:var(--red);}
   .cartao-pct{font-size:11px; color:var(--muted); margin-top:6px;}
@@ -290,8 +302,10 @@
   <!-- VIEW: COMPARATIVO -->
   <div class="view" id="view-comparativo">
     <section>
-      <p class="sec-title">Últimos 6 meses</p>
+      <p class="sec-title">Últimos 6 meses <span class="hint">toque numa barra pra detalhar</span></p>
       <div class="months" id="months-chart"></div>
+      <div class="bank-legend" id="months-legend"></div>
+      <div class="month-detail" id="month-detail"></div>
     </section>
     <section>
       <p class="sec-title">Variação mês a mês</p>
@@ -328,18 +342,18 @@ function getMockData(){
     {nome:'Lazer', valor:320.15},
   ];
   const parcelas = [
-    {nome:'Notebook Dell', valor:349.00, atual:3, total:10},
-    {nome:'Geladeira', valor:210.50, atual:8, total:12},
-    {nome:'Celular', valor:180.00, atual:11, total:12},
-    {nome:'Sofá', valor:265.00, atual:2, total:6},
+    {nome:'Notebook Dell', valor:349.00, atual:3, total:10, banco:'Bradesco'},
+    {nome:'Geladeira', valor:210.50, atual:8, total:12, banco:'Nubank'},
+    {nome:'Celular', valor:180.00, atual:11, total:12, banco:'PicPay'},
+    {nome:'Sofá', valor:265.00, atual:2, total:6, banco:'Bradesco'},
   ];
   const meses = [
-    {label:'abr', total:3120},
-    {label:'mai', total:3480},
-    {label:'jun', total:2990},
-    {label:'jul', total:3610},
-    {label:'ago', total:3255},
-    {label:'set', total:3401.05, current:true},
+    {label:'abr', total:3120, porBanco:{Bradesco:1800, Nubank:900, PicPay:420}},
+    {label:'mai', total:3480, porBanco:{Bradesco:2000, Nubank:1000, PicPay:480}},
+    {label:'jun', total:2990, porBanco:{Bradesco:1700, Nubank:850, PicPay:440}},
+    {label:'jul', total:3610, porBanco:{Bradesco:2100, Nubank:1050, PicPay:460}},
+    {label:'ago', total:3255, porBanco:{Bradesco:1850, Nubank:950, PicPay:455}},
+    {label:'set', total:3401.05, current:true, porBanco:{Bradesco:1950, Nubank:980, PicPay:471.05}},
   ];
   const contas = [
     {banco:'Bradesco', nome:'Conta corrente', saldo:1240.50},
@@ -347,13 +361,13 @@ function getMockData(){
     {banco:'PicPay', nome:'Conta', saldo:120.30},
   ];
   const cartoes = [
-    {banco:'Bradesco', nome:'Cartão Elo Grafite', limiteUsado:2355.77, limiteTotal:6000},
-    {banco:'Nubank', nome:'Cartão Nubank', limiteUsado:1292.00, limiteTotal:4000},
+    {banco:'Bradesco', nome:'Cartão Elo Grafite', limiteUsado:2355.77, limiteTotal:6000, contaId:'demo-cartao-1'},
+    {banco:'Nubank', nome:'Cartão Nubank', limiteUsado:1292.00, limiteTotal:4000, contaId:'demo-cartao-2'},
   ];
   const transacoes = [
-    {descricao:'Supermercado Extra', valor:340.20, categoria:'Mercado', banco:'Bradesco'},
-    {descricao:'Uber', valor:70.10, categoria:'Transporte', banco:'Nubank'},
-    {descricao:'Netflix', valor:44.90, categoria:'Assinaturas', banco:'PicPay'},
+    {descricao:'Supermercado Extra', valor:340.20, categoria:'Mercado', banco:'Bradesco', contaId:'demo-cartao-1'},
+    {descricao:'Uber', valor:70.10, categoria:'Transporte', banco:'Nubank', contaId:'demo-cartao-2'},
+    {descricao:'Netflix', valor:44.90, categoria:'Assinaturas', banco:'PicPay', contaId:'demo-cartao-2'},
   ];
   return {categorias, parcelas, meses, contas, cartoes, transacoes};
 }
@@ -465,7 +479,7 @@ function renderParcelas(targetId, limit){
           <span class="parc-name">${p.nome}</span>
           <span class="parc-val num">${fmt(p.valor)}</span>
         </div>
-        <div class="parc-meta">parcela ${p.atual} de ${p.total}</div>
+        <div class="parc-meta">${p.banco ? `<span class="bank-dot" style="background:${corBanco(p.banco)}; display:inline-block; margin-right:5px;"></span>${p.banco} · ` : ''}parcela ${p.atual} de ${p.total}</div>
         <div class="dots">${dots}</div>
         <div class="parc-restam">${restam===0?'última parcela':'faltam '+restam+(restam===1?' parcela':' parcelas')}</div>
       </div>`;
@@ -496,16 +510,19 @@ function renderContas(){
   if(!cartoes.length){
     cartoesEl.innerHTML = '<p class="empty">Nenhum cartão de crédito encontrado.</p>';
   } else {
-    cartoesEl.innerHTML = cartoes.map(c => {
+    cartoesEl.innerHTML = cartoes.map((c,i) => {
       const pct = c.limiteTotal ? Math.min(100, (c.limiteUsado/c.limiteTotal*100)) : null;
       const corB = corBanco(c.banco);
+      const txs = (data.transacoes||[]).filter(t => t.contaId === c.contaId).sort((a,b)=>b.valor-a.valor);
+      const rowId = 'cartao-'+i;
       return `
-      <div class="cartao-card">
+      <div class="cartao-card" data-row="${rowId}">
         <div class="cartao-top">
           <div>
             <div class="cartao-banco"><span class="bank-dot" style="background:${corB}; display:inline-block; margin-right:6px;"></span>${c.banco}</div>
             <div class="cartao-nome">${c.nome}</div>
           </div>
+          <svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
         </div>
         <div class="cartao-usado num">${fmt(c.limiteUsado)}</div>
         ${c.limiteTotal ? `
@@ -513,8 +530,27 @@ function renderContas(){
           <div class="cartao-track"><div class="cartao-fill ${pct>70?'alto':''}" style="width:${pct.toFixed(0)}%; background:${pct>70?'var(--red)':corB}"></div></div>
           <div class="cartao-pct">${pct.toFixed(0)}% utilizado</div>
         ` : ''}
+        <div class="cat-detail" data-detail="${rowId}">
+          ${txs.length ? `<div style="font-size:11px; color:var(--muted); padding-top:10px;">Compras deste mês</div>` + txs.map(t => `
+            <div class="cat-tx">
+              <span class="tx-desc">${t.descricao}</span>
+              <span class="tx-bank">${t.categoria}</span>
+              <span class="tx-val num">${fmt(t.valor)}</span>
+            </div>`).join('') : '<div class="cat-tx" style="border-top:none; color:var(--muted); padding-top:10px;">Sem compras neste mês (ou fatura ainda não fechou)</div>'}
+        </div>
       </div>`;
     }).join('');
+
+    cartoesEl.querySelectorAll('.cartao-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const id = card.dataset.row;
+        const detail = cartoesEl.querySelector(`[data-detail="${id}"]`);
+        const isOpen = detail.classList.contains('open');
+        cartoesEl.querySelectorAll('.cat-detail.open').forEach(d=>d.classList.remove('open'));
+        cartoesEl.querySelectorAll('.cartao-card.open').forEach(c=>c.classList.remove('open'));
+        if(!isOpen){ detail.classList.add('open'); card.classList.add('open'); }
+      });
+    });
   }
 }
 
@@ -544,11 +580,47 @@ function renderAll(){
   document.getElementById('drawer-parc-count').textContent = data.parcelas.length;
 
   const maxMes = Math.max(1, ...data.meses.map(m=>m.total));
-  document.getElementById('months-chart').innerHTML = data.meses.map(m => `
-    <div class="mcol ${m.current?'current':''}">
-      <div class="bar" style="height:${(m.total/maxMes*100).toFixed(0)}%"></div>
+  const todosBancos = [...new Set(data.meses.flatMap(m => Object.keys(m.porBanco||{})))];
+  document.getElementById('months-chart').innerHTML = data.meses.map((m,i) => {
+    const segs = todosBancos.map(b => {
+      const v = (m.porBanco||{})[b] || 0;
+      if(!v) return '';
+      const h = (v/maxMes*100).toFixed(1);
+      return `<div class="bar-seg" style="height:${h}%; background:${corBanco(b)}"></div>`;
+    }).join('');
+    return `
+    <div class="mcol ${m.current?'current':''}" data-mes-idx="${i}">
+      <div class="bar-stack" style="height:${(m.total/maxMes*100).toFixed(0)}%">${segs || `<div class="bar-seg" style="height:100%; background:var(--panel-2)"></div>`}</div>
       <div class="mlabel">${m.label}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+  document.getElementById('months-legend').innerHTML = todosBancos.map(b => `
+    <span class="item"><span class="bank-dot" style="background:${corBanco(b)}; display:inline-block;"></span>${b}</span>
+  `).join('');
+
+  function renderMonthDetail(idx){
+    const m = data.meses[idx];
+    const detailEl = document.getElementById('month-detail');
+    const bancos = Object.entries(m.porBanco||{}).sort((a,b)=>b[1]-a[1]);
+    if(!bancos.length){ detailEl.innerHTML = `<p class="empty">Sem gastos registrados em ${m.label}.</p>`; return; }
+    detailEl.innerHTML = `<p class="month-detail-title" style="text-transform:capitalize; font-size:13px; margin:14px 0 2px; color:var(--text); font-weight:600;">${m.label} — ${fmt(m.total)}</p>` +
+      bancos.map(([banco,valor]) => `
+        <div class="row">
+          <span class="bank-dot" style="background:${corBanco(banco)}"></span>
+          <span class="nome">${banco}</span>
+          <span class="valor num">${fmt(valor)}</span>
+          <span style="color:var(--muted); font-size:11px;">${(valor/m.total*100).toFixed(0)}%</span>
+        </div>`).join('');
+  }
+  document.querySelectorAll('#months-chart .mcol').forEach(col => {
+    col.addEventListener('click', () => {
+      document.querySelectorAll('#months-chart .mcol').forEach(c=>c.classList.remove('selected'));
+      col.classList.add('selected');
+      renderMonthDetail(parseInt(col.dataset.mesIdx));
+    });
+  });
+  renderMonthDetail(data.meses.length-1);
+  document.querySelector(`#months-chart .mcol[data-mes-idx="${data.meses.length-1}"]`)?.classList.add('selected');
 
   document.getElementById('months-detail').innerHTML = data.meses.slice(1).map((m,i) => {
     const prev = data.meses[i].total;
