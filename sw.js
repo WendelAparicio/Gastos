@@ -1,4 +1,4 @@
-const CACHE = 'meus-gastos-v1';
+const CACHE = 'meus-gastos-v3';
 const ASSETS = [
   'index.html',
   'manifest.json',

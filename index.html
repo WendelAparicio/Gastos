@@ -15,16 +15,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#12130F;
-    --panel:#181A14;
-    --panel-2:#1E2019;
-    --line:#2A2C23;
-    --text:#EDEADD;
-    --muted:#8D8B7C;
-    --gold:#C9A227;
-    --gold-dim:#8A7220;
-    --red:#B5504F;
-    --green:#6C8A56;
+    --bg:#0B0C10;
+    --panel:#14151B;
+    --panel-2:#1B1D25;
+    --line:#262832;
+    --text:#EEEFF3;
+    --muted:#8B8FA3;
+    --gold:#7B7FF5;
+    --gold-dim:#5B5FC7;
+    --red:#F0576B;
+    --green:#3BC87E;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0; background:var(--bg); color:var(--text);
@@ -116,8 +116,17 @@
   .mcol .mlabel{font-size:10.5px; color:var(--muted); margin-top:9px; text-transform:capitalize;}
   .mcol.current .mlabel{color:var(--text); font-weight:600;}
 
-  .cat-row{display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line);}
+  .cat-row{display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line); cursor:pointer;}
   .cat-row:last-child{border-bottom:none;}
+  .cat-row .chev{width:14px; height:14px; stroke:var(--muted); fill:none; stroke-width:2; flex-shrink:0; transition:transform .2s ease; margin-left:8px;}
+  .cat-row.open .chev{transform:rotate(90deg);}
+  .cat-detail{max-height:0; overflow:hidden; transition:max-height .25s ease;}
+  .cat-detail.open{max-height:600px;}
+  .cat-tx{display:flex; align-items:center; gap:10px; padding:9px 0 9px 4px; font-size:12.5px; border-top:1px solid var(--line);}
+  .cat-tx .bank-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+  .cat-tx .tx-desc{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text);}
+  .cat-tx .tx-bank{color:var(--muted); font-size:10.5px; flex-shrink:0;}
+  .cat-tx .tx-val{color:var(--muted); flex-shrink:0; white-space:nowrap;}
   .cat-left{display:flex; flex-direction:column; gap:7px; flex:1; margin-right:16px; min-width:0;}
   .cat-name{font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block;}
   .cat-track{height:3px; background:var(--panel-2); border-radius:2px; overflow:hidden;}
@@ -333,13 +342,20 @@ function getMockData(){
     {label:'set', total:3401.05, current:true},
   ];
   const contas = [
-    {banco:'Banco Exemplo', nome:'Conta corrente', saldo:2140.50},
-    {banco:'Banco Exemplo 2', nome:'Poupança', saldo:850.00},
+    {banco:'Bradesco', nome:'Conta corrente', saldo:1240.50},
+    {banco:'Nubank', nome:'Conta', saldo:850.00},
+    {banco:'PicPay', nome:'Conta', saldo:120.30},
   ];
   const cartoes = [
-    {banco:'Banco Exemplo', nome:'Cartão Gold', limiteUsado:2355.77, limiteTotal:6000},
+    {banco:'Bradesco', nome:'Cartão Elo Grafite', limiteUsado:2355.77, limiteTotal:6000},
+    {banco:'Nubank', nome:'Cartão Nubank', limiteUsado:1292.00, limiteTotal:4000},
   ];
-  return {categorias, parcelas, meses, contas, cartoes};
+  const transacoes = [
+    {descricao:'Supermercado Extra', valor:340.20, categoria:'Mercado', banco:'Bradesco'},
+    {descricao:'Uber', valor:70.10, categoria:'Transporte', banco:'Nubank'},
+    {descricao:'Netflix', valor:44.90, categoria:'Assinaturas', banco:'PicPay'},
+  ];
+  return {categorias, parcelas, meses, contas, cartoes, transacoes};
 }
 
 async function fetchRealData(){
@@ -359,6 +375,32 @@ async function fetchRealData(){
 const fmt = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
 let data = null;
 
+const PALETA_CATEGORIAS = ['#7B7FF5','#3BC87E','#F0576B','#F5A93D','#2BC4C4','#C15CE0','#E85D9A','#4E8FF0'];
+function corCategoria(nome){
+  const idx = Math.abs([...nome].reduce((h,c)=>h*31+c.charCodeAt(0)|0,0)) % PALETA_CATEGORIAS.length;
+  return PALETA_CATEGORIAS[idx];
+}
+const CORES_BANCO = {
+  'bradesco': '#CC092F',
+  'nubank': '#820AD1',
+  'picpay': '#21C25E',
+  'itaú': '#EC7000', 'itau': '#EC7000',
+  'santander': '#EC0000',
+  'banco do brasil': '#F8D117',
+  'caixa': '#0070AE',
+  'inter': '#FF7A00',
+  'c6 bank': '#000000', 'c6': '#000000',
+  'mercado pago': '#00B1EA',
+  'will bank': '#00E27A',
+  'next': '#00FF5F',
+};
+function corBanco(nome){
+  if(!nome) return 'var(--muted)';
+  const key = nome.trim().toLowerCase();
+  for(const k in CORES_BANCO){ if(key.includes(k)) return CORES_BANCO[k]; }
+  return 'var(--gold)';
+}
+
 /* CATEGORIAS */
 function renderCategorias(targetId, limit){
   if(!data.categorias.length){
@@ -369,17 +411,43 @@ function renderCategorias(targetId, limit){
   const max = Math.max(...data.categorias.map(c=>c.valor));
   const list = [...data.categorias].sort((a,b)=>b.valor-a.valor).slice(0, limit||99);
   const el = document.getElementById(targetId);
-  el.innerHTML = list.map(c => `
-    <div class="cat-row">
+  el.innerHTML = list.map((c,i) => {
+    const cor = corCategoria(c.nome);
+    const txs = (data.transacoes||[]).filter(t => t.categoria === c.nome).sort((a,b)=>b.valor-a.valor);
+    const rowId = targetId+'-row-'+i;
+    return `
+    <div class="cat-row" data-row="${rowId}">
       <div class="cat-left">
         <span class="cat-name">${c.nome}</span>
-        <div class="cat-track"><div class="cat-fill" style="width:${(c.valor/max*100).toFixed(0)}%"></div></div>
+        <div class="cat-track"><div class="cat-fill" style="width:${(c.valor/max*100).toFixed(0)}%; background:${cor}"></div></div>
       </div>
-      <div>
+      <div style="display:flex; align-items:center;">
         <span class="cat-val num">${fmt(c.valor)}</span>
         <span class="cat-pct num">${(c.valor/totalMes*100).toFixed(0)}%</span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
       </div>
-    </div>`).join('');
+    </div>
+    <div class="cat-detail" data-detail="${rowId}">
+      ${txs.length ? txs.map(t => `
+        <div class="cat-tx">
+          <span class="bank-dot" style="background:${corBanco(t.banco)}"></span>
+          <span class="tx-desc">${t.descricao}</span>
+          <span class="tx-bank">${t.banco||''}</span>
+          <span class="tx-val num">${fmt(t.valor)}</span>
+        </div>`).join('') : '<div class="cat-tx" style="border-top:none; color:var(--muted)">Sem detalhe de transações disponível</div>'}
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.cat-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const id = row.dataset.row;
+      const detail = el.querySelector(`[data-detail="${id}"]`);
+      const isOpen = detail.classList.contains('open');
+      el.querySelectorAll('.cat-detail.open').forEach(d=>d.classList.remove('open'));
+      el.querySelectorAll('.cat-row.open').forEach(r=>r.classList.remove('open'));
+      if(!isOpen){ detail.classList.add('open'); row.classList.add('open'); }
+    });
+  });
 }
 
 /* PARCELAS */
@@ -415,7 +483,7 @@ function renderContas(){
     contasEl.innerHTML = contas.map(c => `
       <div class="conta-row">
         <div class="conta-left">
-          <span class="conta-banco">${c.banco}</span>
+          <span class="conta-banco"><span class="bank-dot" style="background:${corBanco(c.banco)}; display:inline-block; margin-right:6px;"></span>${c.banco}</span>
           <span class="conta-nome">${c.nome}</span>
         </div>
         <span class="conta-saldo num">${fmt(c.saldo)}</span>
@@ -430,18 +498,19 @@ function renderContas(){
   } else {
     cartoesEl.innerHTML = cartoes.map(c => {
       const pct = c.limiteTotal ? Math.min(100, (c.limiteUsado/c.limiteTotal*100)) : null;
+      const corB = corBanco(c.banco);
       return `
       <div class="cartao-card">
         <div class="cartao-top">
           <div>
-            <div class="cartao-banco">${c.banco}</div>
+            <div class="cartao-banco"><span class="bank-dot" style="background:${corB}; display:inline-block; margin-right:6px;"></span>${c.banco}</div>
             <div class="cartao-nome">${c.nome}</div>
           </div>
         </div>
         <div class="cartao-usado num">${fmt(c.limiteUsado)}</div>
         ${c.limiteTotal ? `
           <div class="cartao-limite">de ${fmt(c.limiteTotal)} de limite</div>
-          <div class="cartao-track"><div class="cartao-fill ${pct>70?'alto':'ok'}" style="width:${pct.toFixed(0)}%"></div></div>
+          <div class="cartao-track"><div class="cartao-fill ${pct>70?'alto':''}" style="width:${pct.toFixed(0)}%; background:${pct>70?'var(--red)':corB}"></div></div>
           <div class="cartao-pct">${pct.toFixed(0)}% utilizado</div>
         ` : ''}
       </div>`;
