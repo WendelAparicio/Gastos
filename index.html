@@ -133,6 +133,8 @@
   .cat-detail.open{max-height:600px;}
   .cat-tx{display:flex; align-items:flex-start; gap:10px; padding:10px 0 10px 4px; font-size:12.5px; border-top:1px solid var(--line);}
   .bank-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+  .bank-logo{border-radius:8px; object-fit:contain; background:#fff; padding:3px; flex-shrink:0;}
+  .bank-fallback{display:inline-flex; align-items:center; justify-content:center; border-radius:8px; color:#fff; font-weight:700; flex-shrink:0; font-family:'IBM Plex Sans', sans-serif;}
   .cat-tx .bank-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:4px;}
   .cat-tx .tx-desc{flex:1; min-width:0; overflow-wrap:break-word; white-space:normal; color:var(--text); line-height:1.4;}
   .cat-tx .tx-bank{color:var(--muted); font-size:10.5px; flex-shrink:0; white-space:nowrap; padding-top:1px;}
@@ -161,9 +163,9 @@
   .empty{color:var(--muted); font-size:13px; padding:24px 0; text-align:center;}
 
   /* Contas e Cartões */
-  .conta-row{display:flex; align-items:center; justify-content:space-between; padding:13px 0; border-bottom:1px solid var(--line);}
+  .conta-row{display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid var(--line);}
   .conta-row:last-child{border-bottom:none;}
-  .conta-left{display:flex; flex-direction:column; gap:3px; min-width:0;}
+  .conta-left{display:flex; flex-direction:column; gap:3px; min-width:0; flex:1;}
   .conta-banco{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em;}
   .conta-nome{font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .conta-saldo{font-size:15px; font-family:'Spectral', serif; font-weight:500; white-space:nowrap; flex-shrink:0;}
@@ -420,11 +422,45 @@ const CORES_BANCO = {
   'will bank': '#00E27A',
   'next': '#00FF5F',
 };
+const DOMINIOS_BANCO = {
+  'bradesco': 'bradesco.com.br',
+  'nubank': 'nubank.com.br',
+  'picpay': 'picpay.com',
+  'itaú': 'itau.com.br', 'itau': 'itau.com.br',
+  'santander': 'santander.com.br',
+  'banco do brasil': 'bb.com.br',
+  'caixa': 'caixa.gov.br',
+  'inter': 'bancointer.com.br',
+  'c6 bank': 'c6bank.com.br', 'c6': 'c6bank.com.br',
+  'mercado pago': 'mercadopago.com.br',
+  'will bank': 'willbank.com.br',
+  'next': 'next.me',
+};
 function corBanco(nome){
   if(!nome) return 'var(--muted)';
-  const key = nome.trim().toLowerCase();
-  for(const k in CORES_BANCO){ if(key.includes(k)) return CORES_BANCO[k]; }
+  const key = nome.trim().toLowerCase().replace(/\s+/g,'');
+  for(const k in CORES_BANCO){ if(key.includes(k.replace(/\s+/g,''))) return CORES_BANCO[k]; }
   return 'var(--gold)';
+}
+function onLogoError(img, cor, letra){
+  const span = document.createElement('span');
+  span.className = 'bank-fallback';
+  span.style.cssText = img.style.cssText + ';background:'+cor+';';
+  span.textContent = letra;
+  img.replaceWith(span);
+}
+function bankIcon(banco, size){
+  size = size || 22;
+  const cor = corBanco(banco);
+  const letra = (banco||'?').trim().charAt(0).toUpperCase();
+  if(!banco) return `<span class="bank-fallback" style="width:${size}px;height:${size}px;background:${cor};font-size:${size*0.45}px;">?</span>`;
+  const key = banco.trim().toLowerCase().replace(/\s+/g,'');
+  let dominio = null;
+  for(const k in DOMINIOS_BANCO){ if(key.includes(k.replace(/\s+/g,''))){ dominio = DOMINIOS_BANCO[k]; break; } }
+  if(dominio){
+    return `<img src="https://logo.clearbit.com/${dominio}?size=80" class="bank-logo" style="width:${size}px;height:${size}px;" alt="${banco}" onerror="onLogoError(this,'${cor}','${letra}')">`;
+  }
+  return `<span class="bank-fallback" style="width:${size}px;height:${size}px;background:${cor};font-size:${size*0.45}px;">${letra}</span>`;
 }
 
 /* CATEGORIAS */
@@ -490,7 +526,7 @@ function renderParcelas(targetId, limit){
     return `
       <div class="parc-row" style="border-left-color:${corB}">
         <div class="parc-head">
-          <span class="parc-banco">${p.banco ? `<span class="bank-dot" style="background:${corB}; display:inline-block;"></span>${p.banco}` : ''}</span>
+          <span class="parc-banco">${p.banco ? `${bankIcon(p.banco, 16)}${p.banco}` : ''}</span>
           <span class="parc-badge ${restam===0?'last':'ok'}">${restam===0?'última parcela':restam+(restam===1?' restante':' restantes')}</span>
         </div>
         <div class="parc-top">
@@ -513,8 +549,9 @@ function renderContas(){
   } else {
     contasEl.innerHTML = contas.map(c => `
       <div class="conta-row">
+        ${bankIcon(c.banco, 34)}
         <div class="conta-left">
-          <span class="conta-banco"><span class="bank-dot" style="background:${corBanco(c.banco)}; display:inline-block; margin-right:6px;"></span>${c.banco}</span>
+          <span class="conta-banco">${c.banco}</span>
           <span class="conta-nome">${c.nome}</span>
         </div>
         <span class="conta-saldo num">${fmt(c.saldo)}</span>
@@ -535,9 +572,12 @@ function renderContas(){
       return `
       <div class="cartao-card" data-row="${rowId}">
         <div class="cartao-top">
-          <div>
-            <div class="cartao-banco"><span class="bank-dot" style="background:${corB}; display:inline-block; margin-right:6px;"></span>${c.banco}</div>
-            <div class="cartao-nome">${c.nome}</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            ${bankIcon(c.banco, 30)}
+            <div>
+              <div class="cartao-banco">${c.banco}</div>
+              <div class="cartao-nome">${c.nome}</div>
+            </div>
           </div>
           <svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
         </div>
@@ -579,8 +619,9 @@ function renderContas(){
   } else {
     investEl.innerHTML = investimentos.map(inv => `
       <div class="conta-row">
+        ${bankIcon(inv.banco, 34)}
         <div class="conta-left">
-          <span class="conta-banco"><span class="bank-dot" style="background:${corBanco(inv.banco)}; display:inline-block; margin-right:6px;"></span>${inv.banco}</span>
+          <span class="conta-banco">${inv.banco}</span>
           <span class="conta-nome">${inv.nome}${inv.taxa ? ' · '+inv.taxa : ''}</span>
         </div>
         <span class="conta-saldo num">${fmt(inv.valor)}</span>
@@ -671,7 +712,7 @@ function selectMonth(idx){
     detailEl.innerHTML = `<p style="text-transform:capitalize; font-size:13px; margin:14px 0 2px; color:var(--text); font-weight:600;">${m.label} — ${fmt(m.total)}</p>` +
       bancos.map(([banco,valor]) => `
         <div class="row">
-          <span class="bank-dot" style="background:${corBanco(banco)}"></span>
+          ${bankIcon(banco, 18)}
           <span class="nome">${banco}</span>
           <span class="valor num">${fmt(valor)}</span>
           <span style="color:var(--muted); font-size:11px;">${(valor/m.total*100).toFixed(0)}%</span>
