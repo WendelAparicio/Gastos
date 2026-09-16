@@ -182,6 +182,16 @@
 
   .empty{color:var(--muted); font-size:13px; padding:24px 0; text-align:center;}
 
+  /* Seletor de bancos deslizável */
+  .bank-tabs-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; padding:16px 16px 0; scrollbar-width:none;}
+  .bank-tabs-wrap::-webkit-scrollbar{display:none;}
+  .bank-tabs{display:flex; gap:8px; padding-bottom:2px;}
+  .bank-pill{flex-shrink:0; display:flex; align-items:center; gap:7px; padding:8px 15px; border-radius:22px;
+    background:var(--panel); border:1.5px solid var(--line); font-size:12.5px; color:var(--muted);
+    cursor:pointer; white-space:nowrap; font-family:inherit; transition:background-color .25s ease, border-color .25s ease, color .25s ease;}
+  .bank-pill .bank-dot{width:7px; height:7px; border-radius:50%;}
+  .bank-pill.active{color:#fff; font-weight:600; border-color:transparent;}
+
   /* Contas e Cartões */
   .conta-row{display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid var(--line);}
   .conta-row:last-child{border-bottom:none;}
@@ -319,6 +329,9 @@
 
   <!-- VIEW: CONTAS E CARTÕES -->
   <div class="view" id="view-contas">
+    <div class="bank-tabs-wrap">
+      <div class="bank-tabs" id="bank-tabs"></div>
+    </div>
     <section>
       <p class="sec-title">Contas bancárias <span class="hint" id="contas-total-hint"></span></p>
       <div id="contas-list"></div>
@@ -330,6 +343,10 @@
     <section>
       <p class="sec-title">Investimentos <span class="hint">caixinhas e CDBs</span></p>
       <div id="investimentos-list"></div>
+    </section>
+    <section>
+      <p class="sec-title">Extrato <span class="hint" id="extrato-hint"></span></p>
+      <div id="extrato-list"></div>
     </section>
   </div>
 
@@ -734,6 +751,60 @@ function renderContas(){
         <span class="conta-saldo num">${fmt(inv.valor)}</span>
       </div>`).join('');
   }
+
+  renderBankTabs();
+  renderExtrato();
+}
+
+/* Seletor de bancos deslizável + extrato filtrado */
+let bancoSelecionado = 'Todos';
+function listaBancos(){
+  const set = new Set();
+  (data.contas||[]).forEach(c=>set.add(c.banco));
+  (data.cartoes||[]).forEach(c=>set.add(c.banco));
+  (data.investimentos||[]).forEach(i=>set.add(i.banco));
+  return [...set];
+}
+function renderBankTabs(){
+  const wrap = document.getElementById('bank-tabs');
+  if(!wrap) return;
+  const opcoes = ['Todos', ...listaBancos()];
+  if(!opcoes.includes(bancoSelecionado)) bancoSelecionado = 'Todos';
+  wrap.innerHTML = opcoes.map(b => {
+    const cor = b==='Todos' ? 'var(--gold)' : corBanco(b);
+    const ativo = b===bancoSelecionado;
+    const style = ativo ? `background:${cor};` : `border-color:${cor==='var(--gold)'?'var(--line)':cor+'66'};`;
+    return `<button type="button" class="bank-pill ${ativo?'active':''}" data-banco="${b.replace(/"/g,'&quot;')}" style="${style}">
+      ${b!=='Todos' ? `<span class="bank-dot" style="background:${ativo?'#fff':cor}"></span>` : ''}${b}
+    </button>`;
+  }).join('');
+  wrap.querySelectorAll('.bank-pill').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      bancoSelecionado = btn.dataset.banco;
+      renderBankTabs();
+      renderExtrato();
+    });
+  });
+}
+function renderExtrato(){
+  const el = document.getElementById('extrato-list');
+  const hintEl = document.getElementById('extrato-hint');
+  if(!el || !data.meses[monthIdx]) return;
+  const mes = data.meses[monthIdx];
+  const txs = (mes.transacoes||[])
+    .filter(t => bancoSelecionado==='Todos' || t.banco===bancoSelecionado)
+    .sort((a,b)=> new Date(b.data||0) - new Date(a.data||0));
+  if(hintEl) hintEl.textContent = bancoSelecionado==='Todos' ? mes.label : bancoSelecionado;
+  if(!txs.length){ el.innerHTML = '<p class="empty">Nenhuma transação encontrada.</p>'; return; }
+  el.innerHTML = txs.map(t => {
+    const dataFmt = t.data ? new Date(t.data).toLocaleDateString('pt-BR', {day:'2-digit', month:'short'}) : '';
+    return `
+      <div class="cat-tx" style="cursor:default;">
+        <span class="bank-dot" style="background:${corBanco(t.banco)}"></span>
+        <div class="tx-desc">${t.descricao}<div style="font-size:10.5px; color:var(--muted); margin-top:2px;">${t.categoria}${dataFmt ? ' · '+dataFmt : ''}</div></div>
+        <span class="tx-val num">${fmt(t.valor)}</span>
+      </div>`;
+  }).join('');
 }
 
 function renderAll(){
@@ -808,6 +879,8 @@ function selectMonth(idx){
   renderParcelas('parc-list-full');
   document.getElementById('drawer-parc-count').textContent = m.parcelas.length;
 
+  renderExtrato();
+
   document.querySelectorAll('#months-chart .mcol').forEach(c=>c.classList.remove('selected'));
   document.querySelector(`#months-chart .mcol[data-mes-idx="${idx}"]`)?.classList.add('selected');
 
@@ -832,11 +905,15 @@ function selectMonth(idx){
    10 minutos automaticamente, e sempre que o app volta a ficar visível
    (usuário volta de outro app/tela) se fizer mais de 2 minutos da última vez. */
 let ultimoFetch = 0;
+let monthIdx = 0;
+let jaCarregouUmaVez = false;
 async function carregarDados(manual){
   const statusEl = document.querySelector('.drawer-foot .status');
   const refreshBtn = document.getElementById('refresh-btn');
   if(refreshBtn) refreshBtn.classList.add('spinning');
-  const monthIdxAnterior = (typeof monthIdx === 'number') ? monthIdx : null;
+  // Só tenta preservar o mês que o usuário estava vendo a partir da 2ª carga —
+  // na primeira, deixa cair no mês atual (comportamento padrão do renderAll).
+  const monthIdxAnterior = jaCarregouUmaVez ? monthIdx : null;
   try{
     data = await fetchRealData();
     if(statusEl){
@@ -854,6 +931,7 @@ async function carregarDados(manual){
   if(monthIdxAnterior !== null && monthIdxAnterior < data.meses.length){
     selectMonth(monthIdxAnterior);
   }
+  jaCarregouUmaVez = true;
   ultimoFetch = Date.now();
   if(refreshBtn) refreshBtn.classList.remove('spinning');
 }
@@ -896,7 +974,6 @@ hamburger.addEventListener('click', ()=> drawer.classList.contains('open') ? clo
 scrim.addEventListener('click', closeDrawer);
 
 /* MONTH SWITCH (topo do app) */
-let monthIdx = 0;
 document.getElementById('month-prev').addEventListener('click', ()=>{
   if(data && monthIdx>0) selectMonth(monthIdx-1);
 });
