@@ -21,8 +21,8 @@
     --line:#262832;
     --text:#EEEFF3;
     --muted:#8B8FA3;
-    --gold:#7B7FF5;
-    --gold-dim:#5B5FC7;
+    --gold:#3B82F6;
+    --gold-dim:#2563D6;
     --red:#F0576B;
     --green:#3BC87E;
   }
@@ -30,64 +30,84 @@
   html,body{margin:0; padding:0; background:var(--bg); color:var(--text);
     font-family:'IBM Plex Sans', sans-serif; -webkit-font-smoothing:antialiased;
     overscroll-behavior-y:none;}
-  body{min-height:100vh; padding-top:56px;}
+  body{min-height:100vh; padding-top:58px; padding-bottom:74px;}
   .num{font-feature-settings:"tnum" 1; font-variant-numeric: tabular-nums;}
   ::selection{background:var(--gold); color:#12130F;}
 
   /* ---------- TOP APP BAR ---------- */
-  .appbar{position:fixed; top:0; left:0; right:0; height:56px; z-index:30;
-    display:flex; align-items:center; gap:4px; padding:0 6px 0 4px;
-    background:rgba(18,19,15,.92); backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--line);}
-  .hamburger{width:44px; height:44px; background:none; border:none; cursor:pointer;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;}
-  .hamburger span{display:block; width:19px; height:2px; background:var(--text); border-radius:2px;
+  .appbar{position:fixed; top:0; left:0; right:0; height:58px; z-index:30;
+    display:flex; align-items:center; gap:2px; padding:0 8px;
+    background:rgba(11,12,16,.85); backdrop-filter:blur(14px);
+    box-shadow:0 1px 0 rgba(255,255,255,.04), 0 8px 24px -12px rgba(0,0,0,.6);}
+  .icon-btn{width:38px; height:38px; background:none; border:none; cursor:pointer; border-radius:11px;
+    display:flex; align-items:center; justify-content:center; color:var(--muted); flex-shrink:0;
+    transition:background-color .15s ease, color .15s ease;}
+  .icon-btn:active{background:var(--panel-2); color:var(--text);}
+
+  .hamburger{width:38px; height:38px; background:none; border:none; cursor:pointer; border-radius:11px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    transition:background-color .15s ease;}
+  .hamburger:active{background:var(--panel-2);}
+  .hamburger span{display:block; width:18px; height:2px; background:var(--text); border-radius:2px;
     transition:transform .25s ease, opacity .2s ease;}
   .hamburger.open span:nth-child(1){transform:translateY(6px) rotate(45deg);}
   .hamburger.open span:nth-child(2){opacity:0;}
   .hamburger.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
 
-  .appbar-title{flex:1; display:flex; flex-direction:column; line-height:1.15; padding-left:2px;}
-  .appbar-title .eyebrow{font-size:10.5px; color:var(--muted); letter-spacing:.01em;}
-  .appbar-title .view-name{font-family:'Spectral', serif; font-size:16px; font-weight:600;}
+  .appbar-title{flex:1; display:flex; flex-direction:column; line-height:1.15; padding-left:4px; min-width:0;}
+  .appbar-title .eyebrow{font-size:10px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase;}
+  .appbar-title .view-name{font-family:'Spectral', serif; font-size:16.5px; font-weight:600; letter-spacing:-.01em;}
 
-  .month-switch{display:flex; align-items:center; gap:2px;}
-  .month-switch button{width:32px; height:32px; background:none; border:none; color:var(--muted);
-    cursor:pointer; border-radius:8px; display:flex; align-items:center; justify-content:center;}
-  .month-switch button:active{background:var(--panel-2); color:var(--gold);}
-  .month-switch button svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2;}
-  .month-switch .mchip{font-size:11.5px; color:var(--text); padding:0 4px; text-transform:capitalize;
-    min-width:56px; text-align:center;}
+  .month-switch{display:flex; align-items:center; background:var(--panel-2); border-radius:20px; padding:3px; flex-shrink:0;}
+  .month-switch button{width:28px; height:28px; background:none; border:none; color:var(--muted);
+    cursor:pointer; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:background-color .15s ease, color .15s ease;}
+  .month-switch button:active{background:var(--panel); color:var(--gold);}
+  .month-switch button svg{width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2.2;}
+  .month-switch .mchip{font-size:11.5px; color:var(--text); font-weight:600; padding:0 6px; text-transform:capitalize;
+    min-width:52px; text-align:center;}
+
+  #refresh-btn.spinning svg{animation:spin .8s linear infinite;}
+  @keyframes spin{from{transform:rotate(0deg);} to{transform:rotate(360deg);}}
 
   /* ---------- DRAWER ---------- */
-  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.55); opacity:0; pointer-events:none;
-    transition:opacity .25s ease; z-index:40;}
+  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.6); opacity:0; pointer-events:none;
+    transition:opacity .25s ease; z-index:40; backdrop-filter:blur(2px);}
   .scrim.open{opacity:1; pointer-events:auto;}
 
   .drawer{position:fixed; top:0; left:0; bottom:0; width:78%; max-width:300px;
     background:var(--panel); border-right:1px solid var(--line); z-index:50;
-    transform:translateX(-105%); transition:transform .28s cubic-bezier(.2,.9,.25,1);
+    box-shadow:12px 0 40px -12px rgba(0,0,0,.5);
+    transform:translateX(-105%); transition:transform .32s cubic-bezier(.22,.9,.3,1);
     display:flex; flex-direction:column; padding-top:env(safe-area-inset-top);}
   .drawer.open{transform:translateX(0);}
 
-  .drawer-head{padding:24px 22px 18px; border-bottom:1px solid var(--line);}
-  .drawer-head .mark{width:34px; height:34px; border:1.5px solid var(--gold); border-radius:50%;
-    display:flex; align-items:center; justify-content:center; margin-bottom:14px;}
-  .drawer-head .mark::after{content:''; width:6px; height:6px; background:var(--gold); border-radius:1px;}
-  .drawer-head h2{font-family:'Spectral', serif; font-size:19px; margin:0 0 3px; font-weight:600;}
+  .drawer-head{padding:26px 22px 20px;}
+  .drawer-head .mark{width:40px; height:40px; border-radius:13px; margin-bottom:16px;
+    background:linear-gradient(135deg, var(--gold), var(--gold-dim));
+    box-shadow:0 6px 16px -5px rgba(59,130,246,.5);
+    display:flex; align-items:center; justify-content:center;}
+  .drawer-head .mark svg{width:20px; height:20px; stroke:#fff; fill:none; stroke-width:2;}
+  .drawer-head h2{font-family:'Spectral', serif; font-size:20px; margin:0 0 3px; font-weight:600; letter-spacing:-.01em;}
   .drawer-head p{font-size:12px; color:var(--muted); margin:0;}
 
-  .drawer-nav{flex:1; padding:10px 10px; overflow-y:auto;}
-  .drawer-item{display:flex; align-items:center; gap:14px; width:100%; text-align:left;
-    background:none; border:none; color:var(--muted); padding:13px 12px; border-radius:10px;
-    font-family:inherit; font-size:14.5px; cursor:pointer; margin-bottom:2px;}
-  .drawer-item svg{width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.6; flex-shrink:0;}
-  .drawer-item.active{background:var(--panel-2); color:var(--gold);}
-  .drawer-item .count{margin-left:auto; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums;}
-  .drawer-item.active .count{color:var(--gold);}
+  .drawer-nav{flex:1; padding:6px 12px; overflow-y:auto;}
+  .drawer-item{display:flex; align-items:center; gap:13px; width:100%; text-align:left;
+    background:none; border:none; color:var(--muted); padding:9px 10px; border-radius:12px;
+    font-family:inherit; font-size:14px; cursor:pointer; margin-bottom:3px; transition:background-color .18s ease, color .18s ease;}
+  .drawer-item:active{background:var(--panel-2);}
+  .drawer-icon{width:34px; height:34px; border-radius:10px; background:var(--panel-2); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; transition:background-color .25s ease, transform .3s cubic-bezier(.34,1.5,.64,1);}
+  .drawer-item svg{width:17px; height:17px; stroke:currentColor; fill:none; stroke-width:1.7; flex-shrink:0; transition:stroke .2s ease;}
+  .drawer-item.active{color:var(--text); font-weight:600;}
+  .drawer-item.active .drawer-icon{background:var(--gold); transform:scale(1.05); box-shadow:0 4px 10px -3px rgba(59,130,246,.5);}
+  .drawer-item.active .drawer-icon svg{stroke:#fff;}
+  .drawer-item .count{margin-left:auto; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums;
+    background:var(--panel-2); padding:2px 8px; border-radius:10px; flex-shrink:0;}
+  .drawer-item.active .count{color:var(--gold); background:rgba(59,130,246,.14);}
 
-  .drawer-foot{padding:16px 22px calc(18px + env(safe-area-inset-bottom)); border-top:1px solid var(--line);}
-  .drawer-foot .status{display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--muted);}
+  .drawer-foot{padding:16px 20px calc(18px + env(safe-area-inset-bottom));}
+  .drawer-foot .status{display:flex; align-items:center; gap:8px; font-size:11px; color:var(--muted);
+    background:var(--panel-2); padding:9px 12px; border-radius:12px;}
   .drawer-foot .dot{width:7px; height:7px; border-radius:50%; background:var(--gold-dim); flex-shrink:0;}
 
   /* ---------- CONTENT ---------- */
@@ -196,7 +216,25 @@
   @media (min-width:560px){
     body{max-width:480px; margin:0 auto; border-left:1px solid var(--line); border-right:1px solid var(--line);}
     .appbar{max-width:480px; margin:0 auto; left:0; right:0;}
+    .tabbar{max-width:480px; margin:0 auto;}
   }
+
+  /* ---------- BOTTOM TAB BAR ---------- */
+  .tabbar{position:fixed; bottom:0; left:0; right:0; z-index:25;
+    display:flex; background:rgba(20,21,27,.94); backdrop-filter:blur(10px);
+    border-top:1px solid var(--line); padding:10px 4px calc(8px + env(safe-area-inset-bottom));}
+  .tabbar button{flex:1; background:none; border:none; color:var(--muted); font-family:inherit;
+    font-size:10px; padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; cursor:pointer;
+    text-align:center; width:100%;}
+  .tab-icon-wrap{width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:11px; margin:0 auto;
+    transform:scale(1); background:transparent;
+    transition:transform .38s cubic-bezier(.34,1.6,.64,1), background-color .25s ease, box-shadow .25s ease;}
+  .tabbar button svg{width:18px; height:18px; stroke:var(--muted); fill:none; stroke-width:1.7; transition:stroke .2s ease .04s; display:block;}
+  .tab-label{transition:color .2s ease, font-weight .2s ease, transform .3s cubic-bezier(.34,1.6,.64,1); width:100%; text-align:center; display:block; transform:scale(1);}
+  .tabbar button.active{color:var(--gold);}
+  .tabbar button.active .tab-icon-wrap{background:var(--gold); transform:scale(1.14); box-shadow:0 4px 12px -3px rgba(59,130,246,.55);}
+  .tabbar button.active svg{stroke:#fff;}
+  .tabbar button.active .tab-label{font-weight:600; transform:scale(1.06);}
 </style>
 </head>
 <body>
@@ -205,31 +243,31 @@
 
 <aside class="drawer" id="drawer">
   <div class="drawer-head">
-    <div class="mark"></div>
+    <div class="mark"><svg viewBox="0 0 24 24"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
     <h2>Meus Gastos</h2>
     <p>Controle financeiro pessoal</p>
   </div>
   <nav class="drawer-nav">
     <button class="drawer-item active" data-view="resumo">
-      <svg viewBox="0 0 24 24"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-7h6v7"/></svg>
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-7h6v7"/></svg></span>
       Resumo do mês
     </button>
     <button class="drawer-item" data-view="contas">
-      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/></svg>
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/></svg></span>
       Contas e cartões
     </button>
     <button class="drawer-item" data-view="categorias">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg>
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg></span>
       Categorias
       <span class="count" id="drawer-cat-count"></span>
     </button>
     <button class="drawer-item" data-view="parcelas">
-      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></span>
       Parcelas ativas
       <span class="count" id="drawer-parc-count"></span>
     </button>
     <button class="drawer-item" data-view="comparativo">
-      <svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M11 20V4"/><path d="M18 20v-7"/></svg>
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M11 20V4"/><path d="M18 20v-7"/></svg></span>
       Comparativo mensal
     </button>
   </nav>
@@ -251,6 +289,9 @@
     <span class="mchip" id="month-chip">set 2026</span>
     <button id="month-next" aria-label="Próximo mês"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
   </div>
+  <button id="refresh-btn" class="icon-btn" aria-label="Atualizar dados">
+    <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2;"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v6h-6"/></svg>
+  </button>
 </div>
 
 <main>
@@ -323,6 +364,29 @@
   </div>
 
   </main>
+
+<nav class="tabbar">
+  <button class="tab active" data-view="resumo">
+    <span class="tab-icon-wrap"><svg viewBox="0 0 24 24"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-7h6v7"/></svg></span>
+    <span class="tab-label">Resumo</span>
+  </button>
+  <button class="tab" data-view="contas">
+    <span class="tab-icon-wrap"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/></svg></span>
+    <span class="tab-label">Contas</span>
+  </button>
+  <button class="tab" data-view="categorias">
+    <span class="tab-icon-wrap"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg></span>
+    <span class="tab-label">Categorias</span>
+  </button>
+  <button class="tab" data-view="parcelas">
+    <span class="tab-icon-wrap"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></span>
+    <span class="tab-label">Parcelas</span>
+  </button>
+  <button class="tab" data-view="comparativo">
+    <span class="tab-icon-wrap"><svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M11 20V4"/><path d="M18 20v-7"/></svg></span>
+    <span class="tab-label">Comparativo</span>
+  </button>
+</nav>
 
 <script>
 /* ============================================================
@@ -403,7 +467,49 @@ async function fetchRealData(){
 const fmt = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
 let data = null;
 
-const PALETA_CATEGORIAS = ['#7B7FF5','#3BC87E','#F0576B','#F5A93D','#2BC4C4','#C15CE0','#E85D9A','#4E8FF0'];
+/* Correção manual de categoria — guardada no navegador (localStorage),
+   já que quem categoriza errado é a própria Pluggy, não este app. */
+const CATEGORIAS_DISPONIVEIS = ['Mercado','Alimentação','Restaurantes e bares','Transporte','Transporte por app','Saúde','Farmácia','Educação','Lazer','Compras','Eletrônicos','Vestuário','Entretenimento','Telefonia','Moradia','Empréstimos e financiamentos','Automóvel','Seguros','Serviços','Serviços digitais','Contas de casa','Tarifas','Outros'];
+function getOverrides(){
+  try{ return JSON.parse(localStorage.getItem('categoriaOverrides')||'{}'); }catch(e){ return {}; }
+}
+function setOverride(desc, categoria){
+  const o = getOverrides();
+  o[desc.trim().toLowerCase()] = categoria;
+  try{ localStorage.setItem('categoriaOverrides', JSON.stringify(o)); }catch(e){}
+}
+function aplicarOverrides(){
+  const overrides = getOverrides();
+  if(!Object.keys(overrides).length || !data) return;
+  data.meses.forEach(m => {
+    (m.transacoes||[]).forEach(t => {
+      const key = t.descricao.trim().toLowerCase();
+      if(overrides[key]) t.categoria = overrides[key];
+    });
+    const map = {};
+    (m.transacoes||[]).forEach(t => { map[t.categoria] = (map[t.categoria]||0) + t.valor; });
+    m.categorias = Object.entries(map).map(([nome,valor])=>({nome,valor}));
+  });
+}
+function editarCategoria(btn, descricaoRaw, catAtual){
+  const row = btn.closest('.cat-tx');
+  const select = document.createElement('select');
+  select.style.cssText = 'background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; font-size:11px; padding:3px 6px; flex-shrink:0;';
+  CATEGORIAS_DISPONIVEIS.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    if(c === catAtual) opt.selected = true;
+    select.appendChild(opt);
+  });
+  select.onchange = () => {
+    setOverride(descricaoRaw, select.value);
+    aplicarOverrides();
+    selectMonth(monthIdx);
+  };
+  btn.replaceWith(select);
+}
+
+const PALETA_CATEGORIAS = ['#3B82F6','#3BC87E','#F0576B','#F5A93D','#2BC4C4','#E85D9A','#8A7CF0','#4EA8DE'];
 function corCategoria(nome){
   const idx = Math.abs([...nome].reduce((h,c)=>h*31+c.charCodeAt(0)|0,0)) % PALETA_CATEGORIAS.length;
   return PALETA_CATEGORIAS[idx];
@@ -497,6 +603,7 @@ function renderCategorias(targetId, limit){
           <span class="tx-desc">${t.descricao}</span>
           <span class="tx-bank">${t.banco||''}</span>
           <span class="tx-val num">${fmt(t.valor)}</span>
+          <button class="tx-edit" title="Corrigir categoria" onclick="editarCategoria(this,'${t.descricao.replace(/'/g,"\\'")}','${c.nome.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 3px; font-size:12px; flex-shrink:0;">✎</button>
         </div>`).join('') : '<div class="cat-tx" style="border-top:none; color:var(--muted)">Sem detalhe de transações disponível</div>'}
     </div>`;
   }).join('');
@@ -720,9 +827,16 @@ function selectMonth(idx){
   }
 }
 
-/* Carrega dados reais; se falhar, cai pros dados de exemplo e avisa na tela */
-(async () => {
+/* Carrega dados reais; se falhar, cai pros dados de exemplo e avisa na tela.
+   Reutilizável: chamada no load inicial, no botão de atualizar, a cada
+   10 minutos automaticamente, e sempre que o app volta a ficar visível
+   (usuário volta de outro app/tela) se fizer mais de 2 minutos da última vez. */
+let ultimoFetch = 0;
+async function carregarDados(manual){
   const statusEl = document.querySelector('.drawer-foot .status');
+  const refreshBtn = document.getElementById('refresh-btn');
+  if(refreshBtn) refreshBtn.classList.add('spinning');
+  const monthIdxAnterior = (typeof monthIdx === 'number') ? monthIdx : null;
   try{
     data = await fetchRealData();
     if(statusEl){
@@ -735,19 +849,40 @@ function selectMonth(idx){
       statusEl.innerHTML = '<span class="dot" style="background:var(--red)"></span> Sem conexão — mostrando dados de exemplo';
     }
   }
+  aplicarOverrides();
   renderAll();
-})();
+  if(monthIdxAnterior !== null && monthIdxAnterior < data.meses.length){
+    selectMonth(monthIdxAnterior);
+  }
+  ultimoFetch = Date.now();
+  if(refreshBtn) refreshBtn.classList.remove('spinning');
+}
+carregarDados();
+
+setInterval(() => carregarDados(), 10 * 60 * 1000); // a cada 10 minutos
+
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && Date.now() - ultimoFetch > 2 * 60 * 1000){
+    carregarDados();
+  }
+});
+
+document.getElementById('refresh-btn')?.addEventListener('click', () => carregarDados(true));
 
 /* NAV via drawer */
 const viewNames = {resumo:'Resumo', contas:'Contas', categorias:'Categorias', parcelas:'Parcelas', comparativo:'Comparativo'};
 function goToView(name){
   document.querySelectorAll('.drawer-item').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+  document.querySelectorAll('.tabbar .tab').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
   document.getElementById('appbar-view-name').textContent = viewNames[name];
   closeDrawer();
 }
 document.querySelectorAll('.drawer-item').forEach(btn=>{
+  btn.addEventListener('click', ()=> goToView(btn.dataset.view));
+});
+document.querySelectorAll('.tabbar .tab').forEach(btn=>{
   btn.addEventListener('click', ()=> goToView(btn.dataset.view));
 });
 
