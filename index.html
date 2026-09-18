@@ -341,10 +341,6 @@
       <div class="bank-tabs" id="bank-tabs"></div>
     </div>
     <section>
-      <p class="sec-title">Contas bancárias <span class="hint" id="contas-total-hint"></span></p>
-      <div id="contas-list"></div>
-    </section>
-    <section>
       <p class="sec-title">Cartões de crédito</p>
       <div id="cartoes-list"></div>
     </section>
@@ -676,25 +672,7 @@ function renderParcelas(targetId, limit){
 }
 
 function renderContas(){
-  const contas = data.contas || [];
   const cartoes = data.cartoes || [];
-
-  const contasEl = document.getElementById('contas-list');
-  if(!contas.length){
-    contasEl.innerHTML = '<p class="empty">Nenhuma conta bancária encontrada.</p>';
-  } else {
-    contasEl.innerHTML = contas.map(c => `
-      <div class="conta-row">
-        ${bankIcon(c.banco, 34)}
-        <div class="conta-left">
-          <span class="conta-banco">${c.banco}</span>
-          <span class="conta-nome">${c.nome}</span>
-        </div>
-        <span class="conta-saldo num">${fmt(c.saldo)}</span>
-      </div>`).join('');
-  }
-  const totalSaldo = contas.reduce((s,c)=>s+c.saldo, 0);
-  document.getElementById('contas-total-hint').textContent = contas.length ? fmt(totalSaldo) : '';
 
   const cartoesEl = document.getElementById('cartoes-list');
   if(!cartoes.length){
@@ -769,84 +747,21 @@ function renderContas(){
   renderReconectar();
 }
 
-/* Reconectar contas — abre o widget oficial da Pluggy em modo atualização,
-   direto dentro do app, sem precisar ir no site da Pluggy. */
-function loadPluggyScript(){
-  return new Promise((resolve, reject) => {
-    if(window.PluggyConnect){ resolve(); return; }
-    const s = document.createElement('script');
-    s.src = 'https://cdn.pluggy.ai/pluggy-connect/v2.3.1/pluggy-connect.js';
-    s.onload = resolve;
-    s.onerror = () => reject(new Error('Não consegui carregar o widget da Pluggy'));
-    document.head.appendChild(s);
-  });
-}
-async function reconectarBanco(banco, itemId, btn){
-  const textoOriginal = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Abrindo...';
-  try{
-    const res = await fetch(SUPABASE_FUNCTION_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-        'apikey': SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ action: 'connect-token', itemId }),
-    });
-    const json = await res.json();
-    if(!json.accessToken) throw new Error(json.error || 'Sem token de conexão');
-    await loadPluggyScript();
-    const pluggyConnect = new window.PluggyConnect({
-      connectToken: json.accessToken,
-      updateItem: itemId,
-      includeSandbox: false,
-      onSuccess: () => {
-        btn.textContent = 'Atualizado ✓';
-        setTimeout(() => carregarDados(), 1000);
-      },
-      onError: () => {
-        btn.disabled = false;
-        btn.textContent = textoOriginal;
-      },
-      onClose: () => {
-        if(btn.textContent === 'Abrindo...'){ btn.disabled = false; btn.textContent = textoOriginal; }
-      },
-    });
-    pluggyConnect.init();
-    btn.textContent = textoOriginal;
-    btn.disabled = false;
-  }catch(err){
-    console.warn('Falha ao abrir reconexão:', err.message);
-    btn.disabled = false;
-    btn.textContent = textoOriginal;
-    alert('Não consegui abrir a reconexão agora. Tenta de novo em alguns segundos.');
-  }
-}
+/* Reconectar contas — o widget em modo atualização não funciona pra esse
+   tipo de conector (mesma limitação do PATCH /items, sempre 400), então
+   o caminho confiável continua sendo o meu.pluggy.ai. Deixamos 1 toque
+   de distância em vez de precisar lembrar o endereço. */
 function renderReconectar(){
   const el = document.getElementById('reconectar-list');
   if(!el) return;
-  const itemIds = data.bancosItemIds || {};
-  const bancos = Object.keys(itemIds);
-  if(!bancos.length){
-    el.innerHTML = '<p class="empty">Disponível só com dados reais conectados.</p>';
-    return;
-  }
-  el.innerHTML = bancos.map(banco => `
+  el.innerHTML = `
     <div class="reconectar-row">
-      ${bankIcon(banco, 32)}
       <div class="conta-left">
-        <span class="conta-banco">${banco}</span>
+        <span class="conta-nome">Se algum saldo ou extrato parecer desatualizado, revalida suas contas direto no Meu Pluggy.</span>
       </div>
-      <button type="button" class="reconectar-btn" data-banco="${banco}">Reconectar</button>
-    </div>`).join('');
-  el.querySelectorAll('.reconectar-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const banco = btn.dataset.banco;
-      reconectarBanco(banco, itemIds[banco], btn);
-    });
-  });
+    </div>
+    <a href="https://meu.pluggy.ai/" target="_blank" rel="noopener" class="reconectar-btn" style="display:block; text-align:center; text-decoration:none; margin-top:10px;">Abrir Meu Pluggy ↗</a>
+  `;
 }
 
 /* Seletor de bancos deslizável + extrato filtrado */
