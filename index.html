@@ -746,7 +746,7 @@ function renderContas(){
         ${bankIcon(inv.banco, 34)}
         <div class="conta-left">
           <span class="conta-banco">${inv.banco}</span>
-          <span class="conta-nome">${inv.nome}${inv.taxa ? ' · '+inv.taxa : ''}</span>
+          <span class="conta-nome">${inv.nome}${inv.taxa ? ' · '+inv.taxa : ''}${inv.aportes>1 ? ' · '+inv.aportes+' aportes' : ''}</span>
         </div>
         <span class="conta-saldo num">${fmt(inv.valor)}</span>
       </div>`).join('');
