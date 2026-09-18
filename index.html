@@ -192,6 +192,14 @@
   .bank-pill .bank-dot{width:7px; height:7px; border-radius:50%;}
   .bank-pill.active{color:#fff; font-weight:600; border-color:transparent;}
 
+  .reconectar-row{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line);}
+  .reconectar-row:last-child{border-bottom:none;}
+  .reconectar-row .conta-left{flex:1;}
+  .reconectar-btn{flex-shrink:0; padding:8px 16px; border-radius:20px; background:var(--panel-2); border:1px solid var(--line);
+    color:var(--text); font-size:12px; font-family:inherit; cursor:pointer; transition:opacity .2s ease;}
+  .reconectar-btn:active{opacity:.7;}
+  .reconectar-btn:disabled{opacity:.5;}
+
   /* Contas e Cartões */
   .conta-row{display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid var(--line);}
   .conta-row:last-child{border-bottom:none;}
@@ -347,6 +355,10 @@
     <section>
       <p class="sec-title">Extrato <span class="hint" id="extrato-hint"></span></p>
       <div id="extrato-list"></div>
+    </section>
+    <section>
+      <p class="sec-title">Reconectar <span class="hint">se algum dado estiver desatualizado</span></p>
+      <div id="reconectar-list"></div>
     </section>
   </div>
 
@@ -754,6 +766,87 @@ function renderContas(){
 
   renderBankTabs();
   renderExtrato();
+  renderReconectar();
+}
+
+/* Reconectar contas — abre o widget oficial da Pluggy em modo atualização,
+   direto dentro do app, sem precisar ir no site da Pluggy. */
+function loadPluggyScript(){
+  return new Promise((resolve, reject) => {
+    if(window.PluggyConnect){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.pluggy.ai/pluggy-connect/v2.3.1/pluggy-connect.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Não consegui carregar o widget da Pluggy'));
+    document.head.appendChild(s);
+  });
+}
+async function reconectarBanco(banco, itemId, btn){
+  const textoOriginal = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Abrindo...';
+  try{
+    const res = await fetch(SUPABASE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'connect-token', itemId }),
+    });
+    const json = await res.json();
+    if(!json.accessToken) throw new Error(json.error || 'Sem token de conexão');
+    await loadPluggyScript();
+    const pluggyConnect = new window.PluggyConnect({
+      connectToken: json.accessToken,
+      updateItem: itemId,
+      includeSandbox: false,
+      onSuccess: () => {
+        btn.textContent = 'Atualizado ✓';
+        setTimeout(() => carregarDados(), 1000);
+      },
+      onError: () => {
+        btn.disabled = false;
+        btn.textContent = textoOriginal;
+      },
+      onClose: () => {
+        if(btn.textContent === 'Abrindo...'){ btn.disabled = false; btn.textContent = textoOriginal; }
+      },
+    });
+    pluggyConnect.init();
+    btn.textContent = textoOriginal;
+    btn.disabled = false;
+  }catch(err){
+    console.warn('Falha ao abrir reconexão:', err.message);
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+    alert('Não consegui abrir a reconexão agora. Tenta de novo em alguns segundos.');
+  }
+}
+function renderReconectar(){
+  const el = document.getElementById('reconectar-list');
+  if(!el) return;
+  const itemIds = data.bancosItemIds || {};
+  const bancos = Object.keys(itemIds);
+  if(!bancos.length){
+    el.innerHTML = '<p class="empty">Disponível só com dados reais conectados.</p>';
+    return;
+  }
+  el.innerHTML = bancos.map(banco => `
+    <div class="reconectar-row">
+      ${bankIcon(banco, 32)}
+      <div class="conta-left">
+        <span class="conta-banco">${banco}</span>
+      </div>
+      <button type="button" class="reconectar-btn" data-banco="${banco}">Reconectar</button>
+    </div>`).join('');
+  el.querySelectorAll('.reconectar-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const banco = btn.dataset.banco;
+      reconectarBanco(banco, itemIds[banco], btn);
+    });
+  });
 }
 
 /* Seletor de bancos deslizável + extrato filtrado */
